@@ -2,17 +2,20 @@
 from flask import Flask, render_template, request, session, url_for, redirect
 import pymysql.cursors
 import os
+from dotenv import load_dotenv
+
+load_dotenv('.env')
 
 #Initialize the app from Flask
 app = Flask(__name__)
 
 # Ideally load these from environment variables
-AIVEN_HOST = os.getenv("AIVEN_HOST", "mysql-16f9e683-nyu-1457.l.aivencloud.com")
-AIVEN_PORT = int(os.getenv("AIVEN_PORT", 22766))# replace 12345 with the actual port
-AIVEN_USER = os.getenv("AIVEN_USER", "avnadmin")
-AIVEN_PASSWORD = os.getenv("AIVEN_PASSWORD", "")
-AIVEN_DB = os.getenv("AIVEN_DB", "defaultdb")
-AIVEN_CA_PATH = os.getenv("AIVEN_CA_PATH", "certs/ca.pem")# path to your downloaded CA cert
+AIVEN_HOST = os.getenv("AIVEN_HOST")
+AIVEN_PORT = int(os.getenv("AIVEN_PORT"))
+AIVEN_USER = os.getenv("AIVEN_USER")
+AIVEN_PASSWORD = os.getenv("AIVEN_PASSWORD")
+AIVEN_DB = os.getenv("AIVEN_DB")
+AIVEN_CA_PATH = os.getenv("AIVEN_CA_PATH")
 
 conn = pymysql.connect(
 	host=AIVEN_HOST,
