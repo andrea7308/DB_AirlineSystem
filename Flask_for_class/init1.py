@@ -10,7 +10,7 @@ app = Flask(__name__)
 AIVEN_HOST = os.getenv("AIVEN_HOST", "mysql-16f9e683-nyu-1457.l.aivencloud.com")
 AIVEN_PORT = int(os.getenv("AIVEN_PORT", 22766))# replace 12345 with the actual port
 AIVEN_USER = os.getenv("AIVEN_USER", "avnadmin")
-AIVEN_PASSWORD = os.getenv("AIVEN_PASSWORD", "AVNS_0kVsbcfEvf2k5CO6OE3")
+AIVEN_PASSWORD = os.getenv("AIVEN_PASSWORD", "")
 AIVEN_DB = os.getenv("AIVEN_DB", "defaultdb")
 AIVEN_CA_PATH = os.getenv("AIVEN_CA_PATH", "certs/ca.pem")# path to your downloaded CA cert
 
