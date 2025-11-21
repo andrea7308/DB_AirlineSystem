@@ -1,3 +1,5 @@
+# Ignore secrets
 .env
 
-.venv/
+# Ignore SSL certificates
+certs/ca.pem

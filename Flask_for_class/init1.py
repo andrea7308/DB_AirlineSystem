@@ -4,7 +4,7 @@ import pymysql.cursors
 import os
 from dotenv import load_dotenv
 
-load_dotenv('.env')
+load_dotenv('/Users/sabriaislam/DB_AirlineSystem/Flask_for_class/.env')
 
 #Initialize the app from Flask
 app = Flask(__name__)
@@ -134,7 +134,7 @@ def registerAuth():
 def logout():
 	session.pop('email')
 	return redirect('/')
-		
+
 app.secret_key = 'some key that you will never guess'
 #Run the app on localhost port 5000
 #debug = True -> you don't have to restart flask
