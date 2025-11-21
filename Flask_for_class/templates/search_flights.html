@@ -1,0 +1,57 @@
+<html>
+<head>
+</head>
+<body>
+<h1>Flights</h1>
+	<form method="GET" action="/search_flights">
+    <label for="dept_airport">Departure Airport Code:</label>
+    <input type="text" name="dept_airport" id="dept_airport"
+           placeholder="e.g. LGA"
+           value="{{ request.args.get('dept_airport', '') }}" required>
+	<label for="arr_airport">Arrival Airport Code:</label>
+    <input type="text" name="arr_airport" id="arr_airport"
+           placeholder="e.g. IAH"
+           value="{{ request.args.get('arr_airport', '') }}" required>
+	 <label for="depart_date">Departure Date:</label>
+    <input type="date" name="depart_date" id="depart_date"
+           value="{{ request.args.get('depart_date', '') }}" required>
+    <br><br>
+	<label for="arrival_date">Arrival Date:</label>
+    <input type="date" name="arrival_date" id="arrival_date"
+           value="{{ request.args.get('arrival_date', '') }}">
+
+    <br><br>
+
+    <button type="submit">Search</button>
+</form>
+{% if flights is defined %}
+    <h2>Search Results</h2>
+
+    {% if flights %}
+        <table>
+            <tr>
+                <th>Airline</th>
+                <th>Flight #</th>
+                <th>Departure Airport</th>
+                <th>Arrival Airport</th>
+                <th>Departure Time</th>
+                <th>Arrival Time</th>
+            </tr>
+            {% for f in flights %}
+            <tr>
+                <td>{{ f.name }}</td>
+                <td>{{ f.flight_num }}</td>
+                <td>{{ f.dept_airport }}</td>
+                <td>{{ f.arr_airport }}</td>
+                <td>{{ f.departure_date_time }}</td>
+                <td>{{ f.arrival_date_time }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+       {% else %}
+              <p>No flights found for that search.</p>
+              {% endif %}
+       {% endif %}
+
+</body>
+</html>

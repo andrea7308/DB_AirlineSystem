@@ -31,6 +31,7 @@ conn = pymysql.connect(
 )
 
 
+
 #Define a route to hello function
 @app.route('/')
 def hello():
@@ -134,6 +135,38 @@ def registerAuth():
 def logout():
 	session.pop('email')
 	return redirect('/')
+
+@app.route('/search_flights', methods=['GET'])
+def search_flights():
+    dept_airport = request.args.get('dept_airport')
+    arr_airport = request.args.get('arr_airport')
+    depart_date = request.args.get('depart_date')
+    arrival_date = request.args.get('arrival_date')
+
+    flights = []
+
+    if dept_airport and arr_airport and depart_date:
+        cursor = conn.cursor(pymysql.cursors.DictCursor)
+
+        query = """
+            SELECT flight_num, dept_airport, arr_airport,
+                   departure_date_time, arrival_date_time
+            FROM Flight
+            WHERE dept_airport = %s
+              AND arr_airport = %s
+              AND DATE(departure_date_time) >= %s
+        """
+        params = [dept_airport, arr_airport, depart_date]
+
+        if arrival_date:
+            query += " AND DATE(arrival_date_time) <= %s"
+            params.append(arrival_date)
+
+        cursor.execute(query, params)
+        flights = cursor.fetchall()
+        cursor.close()
+
+    return render_template('search_flights.html', flights=flights)
 
 app.secret_key = 'some key that you will never guess'
 #Run the app on localhost port 5000
