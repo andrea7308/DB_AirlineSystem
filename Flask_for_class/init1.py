@@ -11,7 +11,7 @@ app = Flask(__name__)
 
 # Ideally load these from environment variables
 AIVEN_HOST = os.getenv("AIVEN_HOST")
-AIVEN_PORT = int(os.getenv("AIVEN_PORT"))
+AIVEN_PORT = int(os.getenv("AIVEN_PORT", "22766"))
 AIVEN_USER = os.getenv("AIVEN_USER")
 AIVEN_PASSWORD = os.getenv("AIVEN_PASSWORD")
 AIVEN_DB = os.getenv("AIVEN_DB")
@@ -77,14 +77,19 @@ def loginAuth():
 @app.route('/registerAuth', methods=['GET', 'POST'])
 def registerAuth():
 	#grabs information from the forms
-	username = request.form['username']
-	password = request.form['password']
+
+	fields = [
+    "first_name", "last_name", "building_num",
+    "street", "city", "state", "phone_number", "passport_num",
+    "passport_expiration", "passport_country", "dob", "password"
+	]
+	customer_email = request.form['customer_email']
 
 	#cursor used to send queries
 	cursor = conn.cursor()
 	#executes query
-	query = 'SELECT * FROM Customer WHERE email = %s'
-	cursor.execute(query, (username))
+	query = 'SELECT * FROM Customer WHERE customer_email = %s'
+	cursor.execute(query, (customer_email))
 	#stores the results in a variable
 	data = cursor.fetchone()
 	#use fetchall() if you are expecting more than 1 data row
