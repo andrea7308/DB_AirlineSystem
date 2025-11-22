@@ -46,7 +46,17 @@ def login():
 def register():
 	return render_template('register.html')
 
-#Authenticates the login
+# Defines route for airline staff registration page
+@app.route('/airline_staff_registration')
+def airlineReg():
+	return render_template('airline_staff_registration.html')
+
+# Defines route for the airline staff login page
+@app.route('/airline_staff_login')
+def airlineLog():
+	return render_template('airline_staff_login.html')
+
+#Authenticates the login - customer login
 @app.route('/loginAuth', methods=['GET', 'POST'])
 def loginAuth():
 	#grabs information from the forms
@@ -73,7 +83,7 @@ def loginAuth():
 		error = 'Invalid login or username'
 		return render_template('login.html', error=error)
 
-#Authenticates the register
+#Authenticates the register - customer register
 @app.route('/registerAuth', methods=['GET', 'POST'])
 def registerAuth():
 	#grabs information from the forms
@@ -104,6 +114,106 @@ def registerAuth():
 		conn.commit()
 		cursor.close()
 		return render_template('index.html')
+	cursor.close()
+
+
+# ========== AIRLINE STAFF RELATED FUNCTIONS
+# authenticates the register - admin register
+@app.route('/airlineRegAuth', methods=['GET', 'POST'])
+def airlineRegAuth():
+	#grabs information from the forms
+
+	# username has to be checked if already exists
+	admin_username = request.form['username']
+
+	# airline_name has to be checked if exists
+	airline_name = request.form['airline_name']
+
+	# list of fields which need to be added to the db
+	fields = [
+		"password", "first_name", "last_name", "dob", "airlinestaff_email"
+	]
+
+	#cursor used to send queries; general purpose connection with the db
+	cursor = conn.cursor()
+
+	# check if the username is already taken in Airline_Staff table
+	query = 'SELECT * FROM Airline_Staff WHERE username = %s'
+	cursor.execute(query, (admin_username))
+	#stores the results in a variable
+	data = cursor.fetchone()
+	#use fetchall() if you are expecting more than 1 data row
+
+	# check if the airline name is present in the Airline table
+	query = 'SELECT * FROM Airline WHERE airline_name = %s'
+	cursor.execute(query, (airline_name))
+	
+	data2 = cursor.fetchone()
+
+	# execute next query
+	error = None
+	if(data):
+		#If the previous query returns data, then user exists
+		error = "This user already exists"
+		return render_template('airline_staff_registration.html', error = error)
+	elif(not data2):
+		# this means the airline isn't present in the Airline table; return error
+		error = "Enter a valid airline"
+		return render_template('airline_staff_registration.html', error = error)
+	else:
+		# insert the appropriate values into the Airline_Staff table
+		# insertions are in the order which tuple for the Airline_Staff table must be inserted
+		arr = list()
+		arr.append(admin_username)
+		for field in fields:
+			arr.append(request.form[field])
+		arr.append(airline_name)
+
+		# insert the values into the Airline_Staff table
+		ins = 'INSERT INTO Airline_Staff VALUES(%s, %s, %s, %s, %s, %s, %s)'
+		cursor.execute(ins, tuple(arr))
+
+		# close the cursor's connection and commit changes
+		conn.commit()
+		cursor.close()
+
+		# send the user to the airline staff login page
+		return render_template('airline_staff_login.html')
+
+
+#Authenticates the login - customer login
+@app.route('/airlineLogAuth', methods=['GET', 'POST'])
+def airlineLogAuth():
+	#grabs information from the forms
+	username = request.form['username']
+	password = request.form['password']
+
+	#cursor used to send queries
+	cursor = conn.cursor()
+	#executes query
+	query = 'SELECT * FROM Airline_Staff WHERE username = %s and password = %s'
+	cursor.execute(query, (username, password))
+	#stores the results in a variable
+	data = cursor.fetchone()
+	#use fetchall() if you are expecting more than 1 data row
+	cursor.close()
+	error = None
+	if(data):
+		#creates a session for the the user
+		#session is a built in
+		session['username'] = username
+		return redirect(url_for('airline_staff'))
+	else:
+		#returns an error message to the html page
+		error = 'Invalid login or username'
+		return render_template('airline_staff_login.html', error=error)
+
+
+@app.route('/airline_staff')
+def airline_staff():
+	username = session['username']
+	return render_template('airline_staff.html', user=username)
+
 
 # @app.route('/home')
 # def home():
