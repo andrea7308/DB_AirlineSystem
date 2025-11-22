@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Customer Page</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 40px;
+        }
+        h1, h2 {
+            color: #333;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 30px;
+        }
+        th, td {
+            border: 1px solid #aaa;
+            padding: 8px 12px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        .section {
+            margin-bottom: 50px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Welcome, {{ customer_email }}!</h1>
+
+    <div class="section">
+        <h2>Upcoming Flights</h2>
+        {% if flights %}
+        <table>
+            <tr>
+                <th>Ticket ID</th>
+                <th>Airline</th>
+                <th>Flight Number</th>
+                <th>Departure</th>
+                <th>Arrival</th>
+            </tr>
+            {% for flight in flights %}
+            <tr>
+                <td>{{ flight.ticket_id }}</td>
+                <td>{{ flight.airline_name }}</td>
+                <td>{{ flight.flight_num }}</td>
+                <td>{{ flight.departure_date_time }}</td>
+                <td>{{ flight.arrival_date_time }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+        {% else %}
+        <p>No upcoming flights found.</p>
+        {% endif %}
+    </div>
+
+    <div class="section">
+        <h2>Your Reviews</h2>
+        {% if reviews %}
+        <table>
+            <tr>
+                <th>Airline</th>
+                <th>Departure</th>
+                <th>Rating</th>
+                <th>Comment</th>
+            </tr>
+            {% for review in reviews %}
+            <tr>
+                <td>{{ review.airline_name }}</td>
+                <td>{{ review.departure_date_time }}</td>
+                <td>{{ review.rate }}</td>
+                <td>{{ review.comment }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+        {% else %}
+        <p>No reviews submitted yet.</p>
+        {% endif %}
+    </div>
+
+</body>
+</html>

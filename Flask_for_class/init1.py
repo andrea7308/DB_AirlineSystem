@@ -1,4 +1,5 @@
 #Import Flask Library
+
 from flask import Flask, render_template, request, session, url_for, redirect
 import pymysql.cursors
 import os
@@ -50,13 +51,13 @@ def register():
 @app.route('/loginAuth', methods=['GET', 'POST'])
 def loginAuth():
 	#grabs information from the forms
-	username = request.form['email']
+	username = request.form['username']
 	password = request.form['password']
 
 	#cursor used to send queries
 	cursor = conn.cursor()
 	#executes query
-	query = 'SELECT * FROM Customer WHERE email = %s and password = %s'
+	query = 'SELECT * FROM Customer WHERE customer_email = %s and password = %s'
 	cursor.execute(query, (username, password))
 	#stores the results in a variable
 	data = cursor.fetchone()
@@ -66,23 +67,24 @@ def loginAuth():
 	if(data):
 		#creates a session for the the user
 		#session is a built in
-		session['email'] = username
-		return redirect(url_for('home'))
+		session['username'] = username
+		return redirect(url_for('customerPage'))
 	else:
 		#returns an error message to the html page
 		error = 'Invalid login or username'
 		return render_template('login.html', error=error)
 
 #Authenticates the register
-@app.route('/registerAuth', methods=['GET', 'POST'])
-def registerAuth():
-	#grabs information from the forms
+@app.route('/registerAuthCustomer', methods=['GET', 'POST'])
+def registerAuthCustomer():
 
+	#stores the necessary info from customer
 	fields = [
-    "first_name", "last_name", "building_num",
+    "first_name", "last_name", "password", "building_num",
     "street", "city", "state", "phone_number", "passport_num",
-    "passport_expiration", "passport_country", "dob", "password"
+    "passport_expiration", "passport_country", "dob"
 	]
+	
 	customer_email = request.form['customer_email']
 
 	#cursor used to send queries
@@ -99,24 +101,64 @@ def registerAuth():
 		error = "This user already exists"
 		return render_template('register.html', error = error)
 	else:
-		ins = 'INSERT INTO Customer VALUES(%s, %s)'
-		cursor.execute(ins, (username, password))
+		# fields from html arr
+		arr = list()
+		arr.append(customer_email)
+		# loop over the fields
+		for field in fields:
+			arr.append(request.form[field])
+		ins = 'INSERT INTO Customer VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)'
+		cursor.execute(ins, tuple(arr))
 		conn.commit()
 		cursor.close()
 		return render_template('index.html')
 
-# @app.route('/home')
-# def home():
+@app.route('/customerPage', methods=['GET', 'POST'])
+def customerPage():
+	customer_email = session.get('username')
+	cursor = conn.cursor()
+	
+	query1 = 'select t.ticket_id, t.airline_name, t.flight_num, f.departure_date_time, f.arrival_date_time from Ticket as t join Flight as f on t.airline_name = f.airline_name and t.flight_num = f.flight_num and t.departure_date_time = f.departure_date_time where t.customer_email = %s and f.departure_date_time >= now()'
+	cursor.execute(query1, (customer_email,))
+	data1 = cursor.fetchall()
+	
+	query2 = 'select r.rate, r.comment, r.airline_name, r.departure_date_time from Review as r where r.customer_email = %s  order by departure_date_time asc'
+	cursor.execute(query2, (customer_email,))
+	data2 = cursor.fetchall()
+
+	cursor.close()
+	return render_template('customer.html', customer_email=customer_email, flights=data1, reviews=data2)
+
+# @app.route('/reviewPage', methods=['GET'])
+# def reviewPage():
+# 	customer_email = session['customer_email']
+# 	cursor = conn.cursor()
+	
+# 	query1 = "select t.ticket_id, t.airline_name, t.flight_num, f.departure_date_time, f.arrival_date_time from Ticket as t, Flight as f on t.airline_name = f.airline_name and t.flight_num = f.flight_num and t.departure_date_time = f.departure_date_time where t.customer_email = %s and f.departure_date_time < now()"
+	
+# 	rating = request.form['rating']
+# 	comment = request.form['comment']
+# 	flight = request.form['flight']
+# 	# /// review->review_page for flight
+# 	#  
+# 	ins = 'insert into Review values %s, %s'
+# 	cursor.execute(ins, (customer_email, rating, comment))
+
+
+
+
+
+
+@app.route('/home')
+def home():
     
-#     username = session['username']
-#     cursor = conn.cursor();
-#     query = 'SELECT ts, blog_post FROM blog WHERE username = %s ORDER BY ts DESC'
-#     cursor.execute(query, (username))
-#     data1 = cursor.fetchall() 
-#     for each in data1:
-#         print(each['blog_post'])
-#     cursor.close()
-#     return render_template('home.html', username=username, posts=data1)
+    username = session['username']
+    cursor = conn.cursor()
+    query = 'SELECT * from Flight'
+    cursor.execute(query)
+    data1 = cursor.fetchall() 
+    cursor.close()
+    return render_template('home.html', username=username, flights=data1)
 
 		
 # @app.route('/post', methods=['GET', 'POST'])
