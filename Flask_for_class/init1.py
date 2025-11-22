@@ -4,6 +4,7 @@ from flask import Flask, render_template, request, session, url_for, redirect
 import pymysql.cursors
 import os
 from dotenv import load_dotenv
+import json
 
 load_dotenv('.env')
 
@@ -40,12 +41,12 @@ def hello():
 #Define route for login
 @app.route('/login')
 def login():
-	return render_template('login.html')
+	return render_template('customer_login.html')
 
 #Define route for register
 @app.route('/register')
 def register():
-	return render_template('register.html')
+	return render_template('customer_register.html')
 
 #Authenticates the login
 @app.route('/loginAuth', methods=['GET', 'POST'])
@@ -72,7 +73,7 @@ def loginAuth():
 	else:
 		#returns an error message to the html page
 		error = 'Invalid login or username'
-		return render_template('login.html', error=error)
+		return render_template('customer_login.html', error=error)
 
 #Authenticates the register
 @app.route('/registerAuthCustomer', methods=['GET', 'POST'])
@@ -118,7 +119,17 @@ def customerPage():
 	customer_email = session.get('username')
 	cursor = conn.cursor()
 	
-	query1 = 'select t.ticket_id, t.airline_name, t.flight_num, f.departure_date_time, f.arrival_date_time from Ticket as t join Flight as f on t.airline_name = f.airline_name and t.flight_num = f.flight_num and t.departure_date_time = f.departure_date_time where t.customer_email = %s and f.departure_date_time >= now()'
+	query1 ="""
+			select t.ticket_id, t.airline_name, t.flight_num, 
+				f.departure_date_time, f.arrival_date_time 
+			from Ticket as t 
+			join Flight as f 
+			on t.airline_name = f.airline_name 
+			and t.flight_num = f.flight_num 
+			and t.departure_date_time = f.departure_date_time 
+			where t.customer_email = %s 
+			and f.departure_date_time >= now()
+			"""
 	cursor.execute(query1, (customer_email,))
 	data1 = cursor.fetchall()
 	
@@ -129,24 +140,65 @@ def customerPage():
 	cursor.close()
 	return render_template('customer.html', customer_email=customer_email, flights=data1, reviews=data2)
 
-# @app.route('/reviewPage', methods=['GET'])
-# def reviewPage():
-# 	customer_email = session['customer_email']
-# 	cursor = conn.cursor()
+
+@app.route('/reviewPage', methods=['GET'])
+def reviewPage():
+	customer_email = session.get('username')
+	cursor = conn.cursor()
+
+	# all the reviews made by customer
+	query1 ="""
+			select rate, comment, airline_name, departure_date_time, flight_num
+			from Review 
+			where customer_email = %s
+			"""
 	
-# 	query1 = "select t.ticket_id, t.airline_name, t.flight_num, f.departure_date_time, f.arrival_date_time from Ticket as t, Flight as f on t.airline_name = f.airline_name and t.flight_num = f.flight_num and t.departure_date_time = f.departure_date_time where t.customer_email = %s and f.departure_date_time < now()"
+	cursor.execute(query1, (customer_email,))
+	reviews = cursor.fetchall()
+
+	query2 ="""
+			select t.ticket_id, t.airline_name, t.flight_num, 
+				f.departure_date_time, f.arrival_date_time 
+			from Ticket as t 
+			join Flight as f 
+			on t.airline_name = f.airline_name 
+			and t.flight_num = f.flight_num 
+			and t.departure_date_time = f.departure_date_time 
+			where t.customer_email = %s 
+			and f.departure_date_time < now()
+			"""
 	
-# 	rating = request.form['rating']
-# 	comment = request.form['comment']
-# 	flight = request.form['flight']
-# 	# /// review->review_page for flight
-# 	#  
-# 	ins = 'insert into Review values %s, %s'
-# 	cursor.execute(ins, (customer_email, rating, comment))
+	cursor.execute(query2, (customer_email,))
+	flights = cursor.fetchall()
 
+	cursor.close()
 
+	return render_template('reviews.html', reviews=reviews, flights=flights )
 
+@app.route('/review', methods=['POST'])
+def review():
+	customer_email = session.get('username')
+	cursor = conn.cursor()
 
+	flight_info = json.loads(request.form['flight'])
+	airline_name = flight_info['airline_name']
+	flight_num = flight_info['flight_num']
+	departure_date_time = flight_info['departure_date_time']
+
+	rating = request.form['rating']
+	comment = request.form['comment']
+
+	ins ="""
+		 insert into Review(customer_email, flight_num, 
+		 	departure_date_time, airline_name, rate, comment) 
+		 values (%s, %s, %s, %s, %s, %s)
+		 """
+
+	cursor.execute(ins, (customer_email, flight_num, departure_date_time, airline_name, rating, comment))
+	conn.commit()
+	cursor.close()
+
+	return redirect(url_for('reviewPage'))
 
 
 @app.route('/home')
@@ -174,7 +226,7 @@ def home():
 
 @app.route('/logout')
 def logout():
-	session.pop('email')
+	session.pop('username')
 	return redirect('/')
 		
 app.secret_key = 'some key that you will never guess'
