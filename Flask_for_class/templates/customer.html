@@ -7,23 +7,31 @@
         body {
             font-family: Arial, sans-serif;
             margin: 40px;
+            background-color: #fafafa;
         }
+
         h1, h2 {
             color: #333;
         }
+
         table {
             width: 100%;
             border-collapse: collapse;
+            margin-top: 15px;
             margin-bottom: 30px;
+            background: white;
         }
+
         th, td {
-            border: 1px solid #aaa;
-            padding: 8px 12px;
+            border: 1px solid #ccc;
+            padding: 10px 12px;
             text-align: left;
         }
+
         th {
-            background-color: #f2f2f2;
+            background-color: #e6eef5;
         }
+
         .section {
             margin-bottom: 50px;
         }
@@ -31,37 +39,65 @@
         /* Top bar styling */
         .top-bar {
             width: 100%;
-            padding: 15px 0;
-            margin-bottom: 25px;
+            padding: 12px 0;
+            margin-bottom: 30px;
             border-bottom: 1px solid #ccc;
         }
-        .top-button {
+
+        .top-button, .logout-button {
             padding: 10px 18px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 15px;
+            text-decoration: none;
+            margin-right: 10px;
+        }
+
+        .top-button {
             background-color: #0077cc;
             color: white;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 16px;
-            text-decoration: none;
         }
+        .top-button:hover {
+            background-color: #005fa3;
+        }
+
         .logout-button {
-            padding: 10px 18px;
             background-color: #444;
             color: white;
-            border: none;
+        }
+        .logout-button:hover {
+            background-color: #2f2f2f;
+        }
+
+        /* Additional buttons */
+        .action-button {
+            padding: 10px 16px;
+            background-color: #4caf50;
+            color: white;
             border-radius: 6px;
             cursor: pointer;
-            font-size: 16px;
-            margin-left: 10px;
+            text-decoration: none;
+            font-size: 15px;
+            display: inline-block;
+            margin-top: 10px;
+        }
+        .action-button:hover {
+            background-color: #3a8d41;
         }
     </style>
 </head>
 <body>
+    {% if message %}
+        <div style="background-color: #d4edda; color: #155724; padding: 12px; border-radius: 6px; margin-bottom: 20px;">
+            {{ message }}
+        </div>
+    {% endif %}
 
     <!-- Top button bar -->
     <div class="top-bar">
         <a href="{{ url_for('reviewPage') }}" class="top-button">My Reviews</a>
+        <a href="{{ url_for('displayFlights') }}" class="top-button">Purchase a Flight</a>
 
         <form action="{{ url_for('logout') }}" method="get" style="display:inline;">
             <button type="submit" class="logout-button">Logout</button>
@@ -70,8 +106,10 @@
 
     <h1>Welcome, {{ customer_email }}!</h1>
 
+    <!-- UPCOMING FLIGHTS -->
     <div class="section">
         <h2>Upcoming Flights</h2>
+
         {% if flights %}
         <table>
             <tr>
@@ -81,6 +119,7 @@
                 <th>Departure</th>
                 <th>Arrival</th>
             </tr>
+
             {% for flight in flights %}
             <tr>
                 <td>{{ flight.ticket_id }}</td>

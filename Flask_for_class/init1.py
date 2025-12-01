@@ -5,6 +5,7 @@ import pymysql.cursors
 import os
 from dotenv import load_dotenv
 import json
+import random
 
 load_dotenv('.env')
 
@@ -200,6 +201,132 @@ def review():
 
 	return redirect(url_for('reviewPage'))
 
+@app.route('/displayFlights', methods=['GET', 'POST'])
+def displayFlights():
+	return render_template('displayFlights.html')
+
+@app.route('/purchaseFlight/<flight_num>', methods=['GET'])
+def purchaseFlight(flight_num):
+	cursor = conn.cursor()
+
+	query = """
+        SELECT * FROM Flight
+        WHERE flight_num = %s
+    """
+	cursor.execute(query, (flight_num,))
+	flight = cursor.fetchone()
+
+	return render_template('purchaseFlight.html', flight=flight)
+
+@app.route('/confirmPurchase', methods=['POST'])
+def confirmPurchase():
+	username = session['username']
+	cursor = conn.cursor()
+
+	airline_name = request.form['airline_name']
+	flight_num = request.form['flight_num']
+	departure_date_time = request.form['departure_date_time']
+
+	check =	"""
+			SELECT * FROM Ticket
+			WHERE customer_email = %s
+			AND airline_name = %s
+			AND flight_num = %s
+			AND departure_date_time = %s
+    		"""
+
+	cursor.execute(check, (username, airline_name, flight_num, departure_date_time))
+	if cursor.fetchone():
+			query1 = """
+					SELECT ticket_id, airline_name, flight_num, departure_date_time
+					FROM Ticket
+					WHERE customer_email = %s
+					ORDER BY departure_date_time
+					"""
+			cursor.execute(query1, (username,))
+			flights = cursor.fetchall()
+			
+			cursor.close()
+			# Pass message to customerPage
+			return render_template('customer.html', customer_email=username, flights=flights,
+								message="You already purchased a ticket for this flight.")
+
+
+	cursor.execute("select ticket_id from Ticket")
+	all_ticket_ids = [row['ticket_id'] for row in cursor.fetchall()]
+
+	
+	ticket_id = random.randint(1000, 9999)
+	while ticket_id in all_ticket_ids:
+		ticket_id = random.randint(1000, 9999)
+
+	card_type = request.form['card_type']
+	card_number = request.form['card_number']
+	name_on_card = request.form['name_on_card']
+	card_exp_date = request.form['card_exp_date']
+	card_exp_date = card_exp_date + "-01" 
+	customer_email = username
+
+	ins="""
+		insert into Ticket ( 
+			ticket_id,
+			card_type,
+			card_number,
+			name_on_card,
+			purchase_date_time,
+			card_exp_date,
+			customer_email,
+			airline_name,
+			flight_num,
+			departure_date_time
+		)
+		values (%s, %s, %s, %s, now(), %s, %s, %s, %s, %s)
+		"""
+	
+	cursor.execute(ins, (
+		ticket_id, 
+		card_type, 
+		card_number, 
+		name_on_card, 
+		card_exp_date, 
+		customer_email, 
+		airline_name, 
+		flight_num, 
+		departure_date_time
+	))
+	
+	conn.commit()
+	cursor.close()
+
+	return redirect(url_for('purchaseSuccess'))
+
+@app.route('/purchaseSuccess')
+def purchaseSuccess():
+    return render_template('purchaseSuccess.html')
+
+
+@app.route('/searchFlights', methods=['GET', 'POST'])
+def searchFlights():
+	cursor = conn.cursor()
+
+	dept_airport = request.form['departure_airport']
+	arr_airport = request.form['arrival_airport']
+	departure_date = request.form['departure_date']
+
+	query1= """
+			select airline_name, flight_num, departure_date_time,
+				arrival_date_time, dept_airport, arr_airport, flight_price 
+			from Flight
+			where dept_airport = %s 
+			and arr_airport = %s
+			and date(departure_date_time) = %s
+			"""
+	
+	cursor.execute(query1, (dept_airport, arr_airport, departure_date))
+	flights = cursor.fetchall()
+	cursor.close()
+
+	return render_template('searchFlights.html', flights=flights)
 
 @app.route('/home')
 def home():

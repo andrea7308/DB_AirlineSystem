@@ -1,0 +1,24 @@
+<h2>Available Flights</h2>
+
+<table>
+    <tr>
+        <th>Airline</th>
+        <th>Flight Number</th>
+        <th>Departure</th>
+        <th>Arrival</th>
+        <th></th>
+    </tr>
+
+    {% for flight in flights %}
+    <tr>
+        <td>{{ flight.airline_name }}</td>
+        <td>{{ flight.flight_num }}</td>
+        <td>{{ flight.departure_date_time }}</td>
+        <td>{{ flight.arrival_date_time }}</td>
+        <td>
+            <a href="{{ url_for('purchaseFlight', flight_num=flight.flight_num) }}"
+               class="action-button">Purchase</a>
+        </td>
+    </tr>
+    {% endfor %}
+</table>
