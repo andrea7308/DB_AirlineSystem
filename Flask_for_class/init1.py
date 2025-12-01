@@ -3,8 +3,10 @@ from flask import Flask, render_template, request, session, url_for, redirect
 import pymysql.cursors
 import os
 from dotenv import load_dotenv
+from datetime import datetime # necessary for obtaining the current date and time
+import random # this is used for the flight_num generation for inserting values into Flight
 
-load_dotenv('.env')
+load_dotenv()
 
 #Initialize the app from Flask
 app = Flask(__name__)
@@ -36,26 +38,34 @@ conn = pymysql.connect(
 def hello():
 	return render_template('index.html')
 
+
+# CUSTOMER LOGIN AND REGISTRATION PAGES
 #Define route for login
 @app.route('/login')
 def login():
 	return render_template('login.html')
+
 
 #Define route for register
 @app.route('/register')
 def register():
 	return render_template('register.html')
 
+
+# AIRLINE STAFF LOGIN AND REGISTRATION PAGES
 # Defines route for airline staff registration page
 @app.route('/airline_staff_registration')
 def airlineReg():
 	return render_template('airline_staff_registration.html')
+
 
 # Defines route for the airline staff login page
 @app.route('/airline_staff_login')
 def airlineLog():
 	return render_template('airline_staff_login.html')
 
+
+# AUTHENTICATION PAGES FOR 
 #Authenticates the login - customer login
 @app.route('/loginAuth', methods=['GET', 'POST'])
 def loginAuth():
@@ -82,6 +92,7 @@ def loginAuth():
 		#returns an error message to the html page
 		error = 'Invalid login or username'
 		return render_template('login.html', error=error)
+
 
 #Authenticates the register - customer register
 @app.route('/registerAuth', methods=['GET', 'POST'])
@@ -117,7 +128,7 @@ def registerAuth():
 	cursor.close()
 
 
-# ========== AIRLINE STAFF RELATED FUNCTIONS
+# ========== AIRLINE STAFF RELATED FUNCTIONS ==========
 # authenticates the register - admin register
 @app.route('/airlineRegAuth', methods=['GET', 'POST'])
 def airlineRegAuth():
@@ -202,6 +213,7 @@ def airlineLogAuth():
 		#creates a session for the the user
 		#session is a built in
 		session['username'] = username
+		session['airline_name'] = data['airline_name']
 		return redirect(url_for('airline_staff'))
 	else:
 		#returns an error message to the html page
@@ -212,38 +224,140 @@ def airlineLogAuth():
 @app.route('/airline_staff')
 def airline_staff():
 	username = session['username']
-	return render_template('airline_staff.html', user=username)
+	airline_name = session['airline_name']
+	cursor = conn.cursor()
+	# default for search flights:
+	curr_date = getDateTime()
+	query = 'select * from Flight where departure_date_time between %s and DATE_ADD(%s, INTERVAL 30 DAY) and airline_name = %s;'
+	cursor.execute(query, (curr_date, curr_date, airline_name))
+
+	flights = cursor.fetchall()
+
+	# for the create flights feature, get the airplane ids for the drop down
+	query = 'select airplane_id from Airplane where airline_name = %s;'
+	cursor.execute(query, (airline_name))
+	airplanes = cursor.fetchall()
+
+	cursor.close()
+	return render_template('airline_staff.html', username=username, flights=flights, airplanes=airplanes)
 
 
-# @app.route('/home')
-# def home():
-    
-#     username = session['username']
-#     cursor = conn.cursor();
-#     query = 'SELECT ts, blog_post FROM blog WHERE username = %s ORDER BY ts DESC'
-#     cursor.execute(query, (username))
-#     data1 = cursor.fetchall() 
-#     for each in data1:
-#         print(each['blog_post'])
-#     cursor.close()
-#     return render_template('home.html', username=username, posts=data1)
+# Search for flights as an airline staff
+@app.route('/searchFlights', methods=['GET', 'POST'])
+def searchFlight():
+	start_date = request.form['start_date']
+	end_date = request.form['end_date']
+	dept_code = request.form['dept_code']
+	arr_code = request.form['arr_code']
+	airline_name = session['airline_name']
 
-		
-# @app.route('/post', methods=['GET', 'POST'])
-# def post():
-# 	username = session['username']
-# 	cursor = conn.cursor();
-# 	blog = request.form['blog']
-# 	query = 'INSERT INTO blog (blog_post, username) VALUES(%s, %s)'
-# 	cursor.execute(query, (blog, username))
-# 	conn.commit()
-# 	cursor.close()
-# 	return redirect(url_for('home'))
+	# cursor used to send queries; used to interface with the database!
+	cursor = conn.cursor()
+
+	# to shorten the cases, you can either have:
+	# none (default)
+	if (not start_date and not end_date and not dept_code and not arr_code):
+		curr_date = getDateTime()
+		query = 'select * from Flight where departure_date_time between %s and DATE_ADD(%s, INTERVAL 30 DAY) and airline_name = %s;'
+		cursor.execute(query, (curr_date, curr_date, airline_name))
+
+		flights = cursor.fetchall()
+		cursor.close()
+		return render_template('airline_staff.html', flights=flights)
+	# all
+	elif (start_date and end_date and dept_code and arr_code):
+		# use helper function to convert the times from form to appropriate type
+		start_date = datetimelocalToDatetime(start_date)
+		end_date = datetimelocalToDatetime(end_date)
+		query = 'select * from Flight where departure_date_time between %s and %s and dept_airport = %s and arr_airport = %s and airline_name = %s;'
+		cursor.execute(query, (start_date, end_date, dept_code, arr_code, airline_name))
+
+		flights = cursor.fetchall()
+		cursor.close()
+		return render_template('airline_staff.html', flights=flights)
+	# only start or end dates
+	elif (start_date and end_date and not dept_code and not arr_code):
+		# use helper function to convert the times from form to appropriate type
+		start_date = datetimelocalToDatetime(start_date)
+		end_date = datetimelocalToDatetime(end_date)
+		query = 'select * from Flight where departure_date_time between %s and %s and airline_name = %s;'
+		cursor.execute(query, (start_date, end_date, airline_name))
+
+		flights = cursor.fetchall()
+		cursor.close()
+		return render_template('airline_staff.html', flights=flights)
+	# only dept and arr airport codes
+	elif (not start_date and not end_date and dept_code and arr_code):
+		query = 'select * from Flight where dept_airport = %s and arr_airport = %s and airline_name = %s;'
+		cursor.execute(query, (dept_code, arr_code, airline_name))
+
+		flights = cursor.fetchall()
+		cursor.close()
+		return render_template('airline_staff.html', flights=flights)
+	else:
+		error = 'You must choose a date range, departure and arrival airports, or both'
+		cursor.close()
+		return render_template('airline_staff.html', error=error)
+
 
 @app.route('/logout')
 def logout():
-	session.pop('email')
+	session.pop('username')
+	session.pop('airline_name')
 	return redirect('/')
+
+
+# Search for flights as an airline staff
+@app.route('/createFlight', methods=['GET', 'POST'])
+def createFlight():
+	# values which will be inserted into the db; are in basic order in which they will be inserted
+	airplane_id = request.form.get('airplane_name')
+	airline_name = session['airline_name']
+	flight_num = randomNumberSize20()
+	departure_date_time = request.form['departure_date_time']
+	arrival_date_time = request.form['arrival_date_time']
+	dept_airport = request.form['dept_airport']
+	arr_airport = request.form['arr_airport']
+	flight_price = request.form['flight_price']
+	flight_status = 'on-time' # this will be the default status for a flight; can later be changed once inserted
+
+	# checks if drop down menu value was selected or not
+	if (not airplane_id):
+		return render_template('airline_staff.html', error2 = error2)
+
+	cursor = conn.cursor()
+
+	query = 'insert into Flight values (%s, %s, %s, %s, %s, %s, %s, %s, %s)'
+	cursor.execute(query, (airplane_id, airline_name, flight_num, departure_date_time, arrival_date_time, dept_airport, arr_airport, flight_price, flight_status))
+
+	conn.commit()
+	cursor.close()
+
+	return redirect(url_for('airline_staff'))
+
+
+# Helper functions
+# Get the current date and time in the appropriate format
+def getDateTime():
+	now = datetime.now()
+	return now.strftime("%Y-%m-%d %H:%M:%S")
+
+
+# Switch the datetime-local format to the appropriate format
+def datetimelocalToDatetime(datetimelocal):
+	# datetimelocal is from request.form[]
+	# parse the datetime-local format
+	dt = datetime.fromisoformat(datetimelocal)
+
+	# format it to "YYYY-MM-DD HH:MM:SS"
+	formatted = dt.strftime("%Y-%m-%d %H:%M:%S")
+	return formatted
+
+
+# Create a random number of max length 20
+def randomNumberSize20():
+    return str(random.randrange(0, 10**20))
+
 		
 app.secret_key = 'some key that you will never guess'
 #Run the app on localhost port 5000
