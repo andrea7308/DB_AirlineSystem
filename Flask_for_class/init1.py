@@ -320,6 +320,7 @@ def searchFlights():
 			where dept_airport = %s 
 			and arr_airport = %s
 			and date(departure_date_time) = %s
+			and departure_date_time > now()
 			"""
 	
 	cursor.execute(query1, (dept_airport, arr_airport, departure_date))
