@@ -234,9 +234,12 @@ def airline_staff():
 	flights = cursor.fetchall()
 
 	# for the create flights feature, get the airplane ids for the drop down
-	query = 'select airplane_id from Airplane where airline_name = %s;'
+	query = 'select * from Airplane where airline_name = %s;'
 	cursor.execute(query, (airline_name))
 	airplanes = cursor.fetchall()
+
+	# add airplanes to session so that it persists until the airline_staff logs out
+	session['airplanes'] = airplanes
 
 	cursor.close()
 	return render_template('airline_staff.html', username=username, flights=flights, airplanes=airplanes)
@@ -263,7 +266,7 @@ def searchFlight():
 
 		flights = cursor.fetchall()
 		cursor.close()
-		return render_template('airline_staff.html', flights=flights)
+		return render_template('airline_staff.html', flights=flights, airplanes=session['airplanes'])
 	# all
 	elif (start_date and end_date and dept_code and arr_code):
 		# use helper function to convert the times from form to appropriate type
@@ -274,7 +277,7 @@ def searchFlight():
 
 		flights = cursor.fetchall()
 		cursor.close()
-		return render_template('airline_staff.html', flights=flights)
+		return render_template('airline_staff.html', flights=flights, airplanes=session['airplanes'])
 	# only start or end dates
 	elif (start_date and end_date and not dept_code and not arr_code):
 		# use helper function to convert the times from form to appropriate type
@@ -285,7 +288,7 @@ def searchFlight():
 
 		flights = cursor.fetchall()
 		cursor.close()
-		return render_template('airline_staff.html', flights=flights)
+		return render_template('airline_staff.html', flights=flights, airplanes=session['airplanes'])
 	# only dept and arr airport codes
 	elif (not start_date and not end_date and dept_code and arr_code):
 		query = 'select * from Flight where dept_airport = %s and arr_airport = %s and airline_name = %s;'
@@ -293,17 +296,18 @@ def searchFlight():
 
 		flights = cursor.fetchall()
 		cursor.close()
-		return render_template('airline_staff.html', flights=flights)
+		return render_template('airline_staff.html', flights=flights, airplanes=session['airplanes'])
 	else:
 		error = 'You must choose a date range, departure and arrival airports, or both'
 		cursor.close()
-		return render_template('airline_staff.html', error=error)
+		return render_template('airline_staff.html', error=error, airplanes=session['airplanes'])
 
 
-@app.route('/logout')
-def logout():
+@app.route('/logout_admin')
+def logout_admin():
 	session.pop('username')
 	session.pop('airline_name')
+	session.pop('airplanes')
 	return redirect('/')
 
 
@@ -323,7 +327,7 @@ def createFlight():
 
 	# checks if drop down menu value was selected or not
 	if (not airplane_id):
-		return render_template('airline_staff.html', error2 = error2)
+		return render_template('airline_staff.html', error2 = error2, airplanes=session['airplanes'])
 
 	cursor = conn.cursor()
 
@@ -333,6 +337,76 @@ def createFlight():
 	conn.commit()
 	cursor.close()
 
+	return redirect(url_for('airline_staff'))
+
+
+# Add an airplane to the airline you work for
+@app.route('/addAirplane', methods=['GET', 'POST'])
+def addAirplane():
+	airline_name = session['airline_name']
+	num_of_seats = request.form['num_of_seats']
+	manufacture_comp = request.form['manufacture_comp']
+	age = request.form['age']
+	airplane_id = request.form['airplane_id']
+
+	cursor = conn.cursor()
+	# check if not already in database
+	query = 'select * from Airplane where airline_name = %s and airplane_id = %s;'
+	cursor.execute(query, (airline_name, airplane_id))
+
+	data = cursor.fetchone()
+	if(data):
+		error = 'Airplane with the same id already exists'
+		cursor.close()
+		return render_template('airline_staff.html', error3=error)
+	else:
+		# insert into Airplane
+		query = 'insert into Airplane values (%s, %s, %s, %s, %s)'
+		cursor.execute(query, (num_of_seats, manufacture_comp, age, airplane_id, airline_name))
+
+		# commit changes
+		conn.commit()
+		
+
+		# update the value of session['airplanes']:
+		query = 'select * from Airplane where airline_name = %s;'
+		cursor.execute(query, (airline_name))
+		session['airplanes'] = cursor.fetchall()
+
+		cursor.close()
+		# reload the page so that new data may be added
+		return redirect(url_for('airline_staff'))
+
+
+# Toggle the status of a flight which the toggle button was pressed for
+@app.route("/toggle_status", methods=['GET', 'POST'])
+def toggle_status():
+	airline_name = session['airline_name']
+	flight_num = request.form['flight_num']
+	departure_date_time = request.form['departure_date_time']
+
+	cursor = conn.cursor()
+
+	# fetch current status
+	query = 'select * from Flight where flight_num = %s and departure_date_time = %s and airline_name = %s;'
+	cursor.execute(query, (flight_num, departure_date_time, airline_name))
+	# result will be one row, since we used primary key as query arguments
+	data = cursor.fetchone()
+
+	# get the current status which the flight is
+	current_status = (data)['flight_status'].lower()
+
+	# depending on what the status is currently, change it to something new
+	new_status = "on-time" if current_status == "delayed" else "delayed"
+
+	# update the flight status to the new status value
+	query = 'update Flight set flight_status = %s where flight_num = %s and departure_date_time = %s and airline_name = %s;'
+	cursor.execute(query, (new_status, flight_num, departure_date_time, airline_name))
+
+	conn.commit()
+	cursor.close()
+
+	# load the whole page again; this time will reflect our changes
 	return redirect(url_for('airline_staff'))
 
 

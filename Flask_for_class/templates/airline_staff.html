@@ -12,7 +12,9 @@
     <h2>View Flights</h2>
     <h3>Search For Flight:</h3>
     <form action="/searchFlights" method="POST">
+        <label for="start_date">start date</label>
         <input type="datetime-local" name="start_date" placeholder="start date"> <br>
+        <label for="end_date">end date</label>
         <input type="datetime-local" name="end_date" placeholder="end date"> <br>
         <input type="text" name="dept_code" placeholder="departure airport code"> <br>
         <input type="text" name="arr_code" placeholder="arrival airport code"> <br>
@@ -22,7 +24,7 @@
     <p> {{ error }}</p>
     {% endif %}
 
-    <table>
+    <table border="1">
         <!-- Airline name isn't necessary; only shows flights in the current airline -->
         <th>flight number</th>
         <th>departure date time</th>
@@ -51,6 +53,14 @@
             <td>{{ flight['dept_airport'] }}</td>
             <!-- arr airport -->
             <td>{{ flight['arr_airport'] }}</td>
+            <!-- change status for flight -->
+            <td>
+                <form action="/toggle_status" method="POST">
+                    <input type="hidden" name="flight_num" value="{{ flight['flight_num'] }}">
+                    <input type="hidden" name="departure_date_time" value=" {{ flight['departure_date_time'] }}">
+                    <button type="submit">Toggle</button>
+                </form>
+            </td>
         </tr>
         {% endfor %}
     </table>
@@ -59,17 +69,9 @@
 
     <h2>Create New Flight</h2>
     <form action="/createFlight" method="POST">
-        <!-- "airplane_id" varchar(20) DEFAULT NULL,
-  "airline_name" varchar(20) NOT NULL,
-  "flight_num" varchar(20) NOT NULL,
-  "departure_date_time" datetime NOT NULL,
-  "arrival_date_time" datetime NOT NULL,
-  "dept_airport" varchar(5) NOT NULL,
-  "arr_airport" varchar(5) NOT NULL,
-  "flight_price" decimal(10,2) DEFAULT NULL,
-  "flight_status" varchar(20) DEFAULT NULL, -->
         <!-- airplane_id should be handled separately -->
         <!-- I want a dropdown menu which is made up of the airplane ids that are owned by the airline -->
+        <label for="airplane_name">airplane name</label>
         <select name="airplane_name" id="airplane_name">
             {% for airplane in airplanes %}
             <option value="{{ airplane['airplane_id'] }}"> {{ airplane['airplane_id'] }}</option>
@@ -78,12 +80,14 @@
 
         <!-- airline name doesn't matter, since session has that data -->
         <!-- flight_num should be a randomly generated number no more than 20 digits long, and only positive -->
-        <input type="datetime-local" name="departure_date_time" placeholder="departure date time" required>
-        <input type="datetime-local" name="arrival_date_time" placeholder="arrival date time" required>
-        <input type="text" name="dept_airport" placeholder="departure airport" required>
-        <input type="text" name="arr_airport" placeholder="arrival airport" required>
+        <label for="departure_date_time">departure date time</label>
+        <input type="datetime-local" name="departure_date_time" required> <br>
+        <label for="arrival_date_time">arrival date time</label>
+        <input type="datetime-local" name="arrival_date_time" required> <br>
+        <input type="text" name="dept_airport" placeholder="departure airport" required> <br>
+        <input type="text" name="arr_airport" placeholder="arrival airport" required> <br>
         <input type="number" name="flight_price" placeholder="flight price" min="0.01" step="0.01" placeholder="0.00"
-            required>
+            required> <br>
         <!-- flight status should be on-time by default, and can be changed later from the search menu -->
         <input type="submit" value="Create Flight">
     </form>
@@ -92,9 +96,36 @@
     {% endif %}
     <br>
     <br>
+
     <h2>Add Airplane</h2>
+    <form action="/addAirplane" method="POST">
+        <input type="number" name="num_of_seats" placeholder="number of seats" required> <br>
+        <input type="text" name="manufacture_comp" placeholder="manufacture company" required> <br>
+        <input type="number" name="age" placeholder="age" required> <br>
+        <input type="text" name="airplane_id" placeholder="airplane id" required> <br>
+        <input type="submit" value="Add Airplane">
+    </form>
+    <table border="1">
+        <th>number of seats</th>
+        <th>manufacture company</th>
+        <th>age</th>
+        <th>airplane id</th>
+        {% for airplane in airplanes %}
+        <tr>
+            <td>{{ airplane['num_of_seats'] }}</td>
+            <td>{{ airplane['manufacture_comp'] }}</td>
+            <td>{{ airplane['age'] }}</td>
+            <td>{{ airplane['airplane_id'] }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+
+    {% if error3 %}
+    <p>{{ error3 }}</p>
+    {% endif %}
+
     <h2>Change Status</h2>
-    <a href="{{ url_for('logout') }}">Logout</a> <br>
+    <a href="{{ url_for('logout_admin') }}">Logout</a> <br>
 </body>
 
 </html>
