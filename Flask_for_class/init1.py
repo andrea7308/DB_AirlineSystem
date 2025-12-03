@@ -118,6 +118,8 @@ def registerAuthCustomer():
 @app.route('/customerPage', methods=['GET', 'POST'])
 def customerPage():
 	customer_email = session.get('username')
+	if (not customer_email):
+		redirect(url_for('login'))
 	cursor = conn.cursor()
 	
 	query1 ="""
@@ -145,6 +147,8 @@ def customerPage():
 @app.route('/reviewPage', methods=['GET'])
 def reviewPage():
 	customer_email = session.get('username')
+	if (not customer_email):
+		return redirect(url_for('login'))
 	cursor = conn.cursor()
 
 	# all the reviews made by customer
@@ -207,15 +211,21 @@ def displayFlights():
 
 @app.route('/purchaseFlight/<flight_num>', methods=['GET'])
 def purchaseFlight(flight_num):
+	customer_email = session.get('username')
+
+	if (not customer_email):
+		return redirect(url_for('login'))
+	
 	cursor = conn.cursor()
 
 	query = """
-        SELECT * FROM Flight
-        WHERE flight_num = %s
-    """
+			SELECT * FROM Flight
+			WHERE flight_num = %s
+    		"""
 	cursor.execute(query, (flight_num,))
 	flight = cursor.fetchone()
 
+	cursor.close()
 	return render_template('purchaseFlight.html', flight=flight)
 
 @app.route('/confirmPurchase', methods=['POST'])
@@ -247,7 +257,7 @@ def confirmPurchase():
 			flights = cursor.fetchall()
 			
 			cursor.close()
-			# Pass message to customerPage
+
 			return render_template('customer.html', customer_email=username, flights=flights,
 								message="You already purchased a ticket for this flight.")
 
@@ -313,18 +323,42 @@ def searchFlights():
 	arr_airport = request.form['arrival_airport']
 	departure_date = request.form['departure_date']
 
-	query1= """
-			select airline_name, flight_num, departure_date_time,
-				arrival_date_time, dept_airport, arr_airport, flight_price 
-			from Flight
-			where dept_airport = %s 
-			and arr_airport = %s
-			and date(departure_date_time) = %s
-			and departure_date_time > now()
+	query1 = """
+			SELECT 
+				f.airline_name,
+				f.flight_num,
+				f.departure_date_time,
+				f.arrival_date_time,
+				f.dept_airport,
+				f.arr_airport,
+				f.flight_price,
+				f.flight_status,
+				a.num_of_seats,
+				COUNT(t.ticket_id) AS tickets_sold
+			FROM Flight AS f
+			JOIN Airplane AS a 
+				ON f.airplane_id = a.airplane_id 
+				AND f.airline_name = a.airline_name
+			LEFT JOIN Ticket AS t 
+				ON t.airline_name = f.airline_name
+			AND t.flight_num = f.flight_num
+			AND DATE(t.departure_date_time) = DATE(f.departure_date_time)
+			WHERE f.dept_airport = %s
+			AND f.arr_airport = %s
+			AND DATE(f.departure_date_time) = %s
+			AND f.departure_date_time > NOW()
+			GROUP BY 
+				f.airline_name,
+				f.flight_num,
+				f.departure_date_time,
+				a.num_of_seats
+			HAVING tickets_sold < a.num_of_seats;
 			"""
-	
+
 	cursor.execute(query1, (dept_airport, arr_airport, departure_date))
 	flights = cursor.fetchall()
+
+
 	cursor.close()
 
 	return render_template('searchFlights.html', flights=flights)
