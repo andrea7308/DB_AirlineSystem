@@ -34,6 +34,8 @@
         <th>airplane id</th>
         <th>departure airport</th>
         <th>arrival airport</th>
+        <th>change status</th>
+        <th>view reviews</th>
 
         {% for flight in flights %}
         <tr>
@@ -58,15 +60,37 @@
                 <form action="/toggle_status" method="POST">
                     <input type="hidden" name="flight_num" value="{{ flight['flight_num'] }}">
                     <input type="hidden" name="departure_date_time" value=" {{ flight['departure_date_time'] }}">
-                    <button type="submit">Toggle</button>
+                    <button type="submit">toggle</button>
+                </form>
+            </td>
+            <!-- check the ratings for the given flight -->
+            <td>
+                <form action="/view_ratings" method="POST">
+                    <input type="hidden" name="flight_num" value="{{ flight['flight_num'] }}">
+                    <input type="hidden" name="departure_date_time" value=" {{ flight['departure_date_time'] }}">
+                    <button type="submit">view</button>
                 </form>
             </td>
         </tr>
         {% endfor %}
     </table>
     <br>
+    {% if reviews %}
+    <h2>Ratings and Reviews for Flight</h2>
+    <p>Average Rating: {{ average_rating }}</p>
+    <h3>Ratings</h3>
+    <table border="1">
+        <th>ratings</th>
+        <th>comments</th>
+        {% for review in reviews %}
+        <tr>
+            <td>{{ review['rate'] }}</td>
+            <td>{{ review['comment'] }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+    {% endif %}
     <br>
-
     <h2>Create New Flight</h2>
     <form action="/createFlight" method="POST">
         <!-- airplane_id should be handled separately -->
@@ -124,7 +148,6 @@
     <p>{{ error3 }}</p>
     {% endif %}
 
-    <h2>Change Status</h2>
     <a href="{{ url_for('logout_admin') }}">Logout</a> <br>
 </body>
 

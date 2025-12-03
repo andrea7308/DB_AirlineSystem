@@ -4,7 +4,9 @@ import pymysql.cursors
 import os
 from dotenv import load_dotenv
 from datetime import datetime # necessary for obtaining the current date and time
+import hashlib # this is used in the md5 helper func
 import random # this is used for the flight_num generation for inserting values into Flight
+from functools import wraps # this is to use the protected thingy we learned from class
 
 load_dotenv()
 
@@ -129,6 +131,20 @@ def registerAuth():
 
 
 # ========== AIRLINE STAFF RELATED FUNCTIONS ==========
+
+
+# This is a decorator that will make the route only accessible to logged in users
+# Make sure to import functools
+def protected_route(route):
+	@wraps(route)
+	def wrapper(*args, **kwargs):
+		if session.get('username'):
+			return route(*args, **kwargs) # Direct to the actual function implementation
+		else:
+			return render_template('index.html') # Redirect to unauthorized page or whatever of your choice
+	return wrapper
+
+
 # authenticates the register - admin register
 @app.route('/airlineRegAuth', methods=['GET', 'POST'])
 def airlineRegAuth():
@@ -140,10 +156,12 @@ def airlineRegAuth():
 	# airline_name has to be checked if exists
 	airline_name = request.form['airline_name']
 
-	# list of fields which need to be added to the db
-	fields = [
-		"password", "first_name", "last_name", "dob", "airlinestaff_email"
-	]
+	# rest of the attributes
+	password = request.form['password']
+	first_name = request.form['first_name']
+	last_name = request.form['last_name']
+	dob = request.form['dob']
+	airlinestaff_email = request.form['airlinestaff_email']
 
 	#cursor used to send queries; general purpose connection with the db
 	cursor = conn.cursor()
@@ -174,15 +192,11 @@ def airlineRegAuth():
 	else:
 		# insert the appropriate values into the Airline_Staff table
 		# insertions are in the order which tuple for the Airline_Staff table must be inserted
-		arr = list()
-		arr.append(admin_username)
-		for field in fields:
-			arr.append(request.form[field])
-		arr.append(airline_name)
 
 		# insert the values into the Airline_Staff table
 		ins = 'INSERT INTO Airline_Staff VALUES(%s, %s, %s, %s, %s, %s, %s)'
-		cursor.execute(ins, tuple(arr))
+		# password must be hashed before being inserted into the table
+		cursor.execute(ins, (username, hashPass(password), first_name, last_name, dob, airlinestaff_email, airline_name))
 
 		# close the cursor's connection and commit changes
 		conn.commit()
@@ -197,7 +211,7 @@ def airlineRegAuth():
 def airlineLogAuth():
 	#grabs information from the forms
 	username = request.form['username']
-	password = request.form['password']
+	password = hashPass(request.form['password'])
 
 	#cursor used to send queries
 	cursor = conn.cursor()
@@ -222,6 +236,7 @@ def airlineLogAuth():
 
 
 @app.route('/airline_staff')
+@protected_route
 def airline_staff():
 	username = session['username']
 	airline_name = session['airline_name']
@@ -247,6 +262,7 @@ def airline_staff():
 
 # Search for flights as an airline staff
 @app.route('/searchFlights', methods=['GET', 'POST'])
+@protected_route
 def searchFlight():
 	start_date = request.form['start_date']
 	end_date = request.form['end_date']
@@ -313,6 +329,7 @@ def logout_admin():
 
 # Search for flights as an airline staff
 @app.route('/createFlight', methods=['GET', 'POST'])
+@protected_route
 def createFlight():
 	# values which will be inserted into the db; are in basic order in which they will be inserted
 	airplane_id = request.form.get('airplane_name')
@@ -342,6 +359,7 @@ def createFlight():
 
 # Add an airplane to the airline you work for
 @app.route('/addAirplane', methods=['GET', 'POST'])
+@protected_route
 def addAirplane():
 	airline_name = session['airline_name']
 	num_of_seats = request.form['num_of_seats']
@@ -380,6 +398,7 @@ def addAirplane():
 
 # Toggle the status of a flight which the toggle button was pressed for
 @app.route("/toggle_status", methods=['GET', 'POST'])
+@protected_route
 def toggle_status():
 	airline_name = session['airline_name']
 	flight_num = request.form['flight_num']
@@ -410,6 +429,72 @@ def toggle_status():
 	return redirect(url_for('airline_staff'))
 
 
+# TODO: Implement the 'View flight ratings' functionality
+'''
+	This doesn't have to be too complex, just do what the project guidelines specify
+	Specifications:
+	* airline staff will be able to see each flight's avg ratings AND
+	* all the comments and ratings of that flight given by the customers
+
+	Initial idea:
+	Seeing each flight is already controlled by the 'search flights' functionality.
+
+	Maybe, much like I did with the toggle, something may be incorporated so that
+	all flights may be able to be clicked (once the admin finds the flight they're looking
+	for), then that flight would show its average ratings (easy to calculate with a simple query),
+	and all its comments with ratings attached next to them.
+
+	It would look something like this:
+	search flights:
+	(search bar etc.)
+	table
+	-- | -- | ....... | toggle  | view ratings
+	-- | -- | ....... | on-time | ratings
+
+	once the 'ratings' button would be touched, to make it easier on myself, I could make
+	a 'ratings' table pop up (jinja is good for this) below the 'flights' table, and
+	it would look something like this:
+
+	average rating: 4.5
+	reviews:
+	rating | comment
+	3.4    | lorem ipsum
+	4.3    | blah blah blah
+	... etc.
+
+	I think this is a pretty good idea, even though it is very barebones and doesn't
+	look pretty at all, it gets the job done.
+'''
+@app.route('/view_ratings', methods=['GET', 'POST'])
+@protected_route
+def view_ratings():
+	airline_name = session['airline_name']
+	flight_num = request.form['flight_num']
+	departure_date_time = request.form['departure_date_time']
+
+	cursor = conn.cursor()
+	# for both, remember to deal with the case that no info is returned
+	# get the avg ratings
+	# get all the ratings related to the flight
+	query = 'select rate, comment from Review where airline_name = %s and flight_num = %s and departure_date_time = %s;'
+	# # TODO TODO TODO TODO FOR TESTING PURPOSES ONLY TODO TODO TODO TODO
+	# airline_name = 'Air France'
+	# flight_num = '61983286426849401608'
+	# departure_date_time = '2025-12-01 04:21:00'
+	cursor.execute(query, (airline_name, flight_num, departure_date_time))
+	
+	reviews = cursor.fetchall()
+
+	query = 'select sum(rate) / count(rate) as average_rating from Review where airline_name = %s and flight_num = %s and departure_date_time = %s;'
+	cursor.execute(query, (airline_name, flight_num, departure_date_time))
+
+	average_rating = (cursor.fetchone())['average_rating']
+	
+	cursor.close()
+	return render_template('airline_staff.html', reviews = reviews, average_rating = average_rating)
+
+
+
 # Helper functions
 # Get the current date and time in the appropriate format
 def getDateTime():
@@ -431,6 +516,21 @@ def datetimelocalToDatetime(datetimelocal):
 # Create a random number of max length 20
 def randomNumberSize20():
     return str(random.randrange(0, 10**20))
+
+
+# TODO: Add the hash function you built in the other project to this one for encryption of the passwords
+# hashes passwords using MD5
+def hashPass(password):
+	# create a new MD5 hash object
+	m = hashlib.md5()
+
+    # update the hash object with the bytes-like object (encoded string)
+	m.update(password.encode('utf-8'))
+
+    # get the hash in a human-readable hexadecimal format
+	md5_hash = m.hexdigest()
+
+	return md5_hash
 
 		
 app.secret_key = 'some key that you will never guess'
