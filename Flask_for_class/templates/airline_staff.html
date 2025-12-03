@@ -125,6 +125,17 @@
     {% endif %}
 
     <h2>Change Status</h2>
+
+    <h2>View Reports </h2>
+    <form action="/view_reports" method="GET">
+        <label for="start_date">Start Date:</label><br>
+        <input type="date" id="start_date" name="start_date" required>
+        <br><br>
+        <label for="end_date">End Date:</label><br>
+        <input type="date" id="end_date" name="end_date" required><br><br>
+        <button type="submit">View Report</button>
+    </form>
+    {{ graph_html|safe }}
     <a href="{{ url_for('logout_admin') }}">Logout</a> <br>
 </body>
 
