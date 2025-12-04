@@ -8,7 +8,7 @@
 </head>
 
 <body>
-    <h1>Welcome, {{ username }}</h1>
+    <h1>Welcome, {{ session['username'] }}</h1>
     <h2>View Flights</h2>
     <h3>Search For Flight:</h3>
     <form action="/searchFlights" method="POST">
@@ -93,8 +93,7 @@
     <br>
     <h2>Create New Flight</h2>
     <form action="/createFlight" method="POST">
-        <!-- airplane_id should be handled separately -->
-        <!-- I want a dropdown menu which is made up of the airplane ids that are owned by the airline -->
+        <!-- dropdown which shows all the airplanes owned by the airline which airline staff is part of -->
         <label for="airplane_name">airplane name</label>
         <select name="airplane_name" id="airplane_name">
             {% for airplane in airplanes %}
@@ -102,17 +101,15 @@
             {% endfor %}
         </select> <br>
 
-        <!-- airline name doesn't matter, since session has that data -->
-        <!-- flight_num should be a randomly generated number no more than 20 digits long, and only positive -->
         <label for="departure_date_time">departure date time</label>
         <input type="datetime-local" name="departure_date_time" required> <br>
         <label for="arrival_date_time">arrival date time</label>
         <input type="datetime-local" name="arrival_date_time" required> <br>
         <input type="text" name="dept_airport" placeholder="departure airport" required> <br>
         <input type="text" name="arr_airport" placeholder="arrival airport" required> <br>
+        <!-- this line is necessary to take decimal input that resembles currency -->
         <input type="number" name="flight_price" placeholder="flight price" min="0.01" step="0.01" placeholder="0.00"
             required> <br>
-        <!-- flight status should be on-time by default, and can be changed later from the search menu -->
         <input type="submit" value="Create Flight">
     </form>
     {% if error2 %}

@@ -54,7 +54,7 @@ def register():
 	return render_template('register.html')
 
 
-# AIRLINE STAFF LOGIN AND REGISTRATION PAGES
+# ====== AIRLINE STAFF LOGIN AND REGISTRATION PAGE RENDERING ======
 # Defines route for airline staff registration page
 @app.route('/airline_staff_registration')
 def airlineReg():
@@ -67,7 +67,7 @@ def airlineLog():
 	return render_template('airline_staff_login.html')
 
 
-# AUTHENTICATION PAGES FOR 
+# AUTHENTICATION PAGES FOR CUSTOMER LOGIN
 #Authenticates the login - customer login
 @app.route('/loginAuth', methods=['GET', 'POST'])
 def loginAuth():
@@ -82,9 +82,8 @@ def loginAuth():
 	cursor.execute(query, (username, password))
 	#stores the results in a variable
 	data = cursor.fetchone()
-	#use fetchall() if you are expecting more than 1 data row
+	#use fetchall() if you are expecting more than 1 data row (just notes for my own learning)
 	cursor.close()
-	error = None
 	if(data):
 		#creates a session for the the user
 		#session is a built in
@@ -133,7 +132,7 @@ def registerAuth():
 # ========== AIRLINE STAFF RELATED FUNCTIONS ==========
 
 
-# This is a decorator that will make the route only accessible to logged in users
+# This is a decorator that will make the route only accessible to logged in airline staff
 # Make sure to import functools
 def protected_route(route):
 	@wraps(route)
@@ -149,14 +148,13 @@ def protected_route(route):
 @app.route('/airlineRegAuth', methods=['GET', 'POST'])
 def airlineRegAuth():
 	#grabs information from the forms
-
 	# username has to be checked if already exists
 	admin_username = request.form['username']
 
 	# airline_name has to be checked if exists
 	airline_name = request.form['airline_name']
 
-	# rest of the attributes
+	# rest of the attributes needed for registration
 	password = request.form['password']
 	first_name = request.form['first_name']
 	last_name = request.form['last_name']
@@ -167,20 +165,17 @@ def airlineRegAuth():
 	cursor = conn.cursor()
 
 	# check if the username is already taken in Airline_Staff table
-	query = 'SELECT * FROM Airline_Staff WHERE username = %s'
+	query = 'SELECT * FROM Airline_Staff WHERE username = %s;'
 	cursor.execute(query, (admin_username))
 	#stores the results in a variable
 	data = cursor.fetchone()
-	#use fetchall() if you are expecting more than 1 data row
 
 	# check if the airline name is present in the Airline table
-	query = 'SELECT * FROM Airline WHERE airline_name = %s'
+	query = 'SELECT * FROM Airline WHERE airline_name = %s;'
 	cursor.execute(query, (airline_name))
 	
 	data2 = cursor.fetchone()
 
-	# execute next query
-	error = None
 	if(data):
 		#If the previous query returns data, then user exists
 		error = "This user already exists"
@@ -192,10 +187,8 @@ def airlineRegAuth():
 	else:
 		# insert the appropriate values into the Airline_Staff table
 		# insertions are in the order which tuple for the Airline_Staff table must be inserted
-
-		# insert the values into the Airline_Staff table
 		ins = 'INSERT INTO Airline_Staff VALUES(%s, %s, %s, %s, %s, %s, %s)'
-		# password must be hashed before being inserted into the table
+		# password must be hashed before being inserted into the table; done through helper func
 		cursor.execute(ins, (username, hashPass(password), first_name, last_name, dob, airlinestaff_email, airline_name))
 
 		# close the cursor's connection and commit changes
@@ -216,13 +209,11 @@ def airlineLogAuth():
 	#cursor used to send queries
 	cursor = conn.cursor()
 	#executes query
-	query = 'SELECT * FROM Airline_Staff WHERE username = %s and password = %s'
+	query = 'SELECT * FROM Airline_Staff WHERE username = %s and password = %s;'
 	cursor.execute(query, (username, password))
 	#stores the results in a variable
 	data = cursor.fetchone()
-	#use fetchall() if you are expecting more than 1 data row
 	cursor.close()
-	error = None
 	if(data):
 		#creates a session for the the user
 		#session is a built in
@@ -242,13 +233,13 @@ def airline_staff():
 	airline_name = session['airline_name']
 	cursor = conn.cursor()
 	# default for search flights:
-	curr_date = getDateTime()
+	curr_date = getDateTime() # helper func which gets the curr date, and puts it in the right format to query for it in the db
 	query = 'select * from Flight where departure_date_time between %s and DATE_ADD(%s, INTERVAL 30 DAY) and airline_name = %s;'
 	cursor.execute(query, (curr_date, curr_date, airline_name))
 
 	flights = cursor.fetchall()
 
-	# for the create flights feature, get the airplane ids for the drop down
+	# for the create flights feature, get the airplane ids for the drop down and the initial airplane table
 	query = 'select * from Airplane where airline_name = %s;'
 	cursor.execute(query, (airline_name))
 	airplanes = cursor.fetchall()
@@ -274,7 +265,7 @@ def searchFlight():
 	cursor = conn.cursor()
 
 	# to shorten the cases, you can either have:
-	# none (default)
+	# none (default); no input given to the search
 	if (not start_date and not end_date and not dept_code and not arr_code):
 		curr_date = getDateTime()
 		query = 'select * from Flight where departure_date_time between %s and DATE_ADD(%s, INTERVAL 30 DAY) and airline_name = %s;'
@@ -294,7 +285,7 @@ def searchFlight():
 		flights = cursor.fetchall()
 		cursor.close()
 		return render_template('airline_staff.html', flights=flights, airplanes=session['airplanes'])
-	# only start or end dates
+	# only start and end dates
 	elif (start_date and end_date and not dept_code and not arr_code):
 		# use helper function to convert the times from form to appropriate type
 		start_date = datetimelocalToDatetime(start_date)
@@ -334,7 +325,7 @@ def createFlight():
 	# values which will be inserted into the db; are in basic order in which they will be inserted
 	airplane_id = request.form.get('airplane_name')
 	airline_name = session['airline_name']
-	flight_num = randomNumberSize20()
+	flight_num = randomNumberSize20() # flight num has to be unique within a given airline; accomplished through random number generation with max size of varchar(20)
 	departure_date_time = request.form['departure_date_time']
 	arrival_date_time = request.form['arrival_date_time']
 	dept_airport = request.form['dept_airport']
@@ -344,6 +335,7 @@ def createFlight():
 
 	# checks if drop down menu value was selected or not
 	if (not airplane_id):
+		error2 = 'Please select an airplane from the dropdown menu'
 		return render_template('airline_staff.html', error2 = error2, airplanes=session['airplanes'])
 
 	cursor = conn.cursor()
@@ -354,7 +346,7 @@ def createFlight():
 	conn.commit()
 	cursor.close()
 
-	return redirect(url_for('airline_staff'))
+	return redirect(url_for('airline_staff')) # used redirect so that the page reloads with all the updated elements
 
 
 # Add an airplane to the airline you work for
@@ -386,7 +378,7 @@ def addAirplane():
 		conn.commit()
 		
 
-		# update the value of session['airplanes']:
+		# update the value of session['airplanes'], since it now has a new airplane in it:
 		query = 'select * from Airplane where airline_name = %s;'
 		cursor.execute(query, (airline_name))
 		session['airplanes'] = cursor.fetchall()
@@ -396,7 +388,7 @@ def addAirplane():
 		return redirect(url_for('airline_staff'))
 
 
-# Toggle the status of a flight which the toggle button was pressed for
+# Toggle the status of a flight which the toggle button was pressed for; toggle button on search flights table
 @app.route("/toggle_status", methods=['GET', 'POST'])
 @protected_route
 def toggle_status():
@@ -413,7 +405,7 @@ def toggle_status():
 	data = cursor.fetchone()
 
 	# get the current status which the flight is
-	current_status = (data)['flight_status'].lower()
+	current_status = (data)['flight_status'].lower() # did this b/c we inserted on-time and delayed in uppercase sometimes in our test cases
 
 	# depending on what the status is currently, change it to something new
 	new_status = "on-time" if current_status == "delayed" else "delayed"
@@ -430,41 +422,6 @@ def toggle_status():
 
 
 # TODO: Implement the 'View flight ratings' functionality
-'''
-	This doesn't have to be too complex, just do what the project guidelines specify
-	Specifications:
-	* airline staff will be able to see each flight's avg ratings AND
-	* all the comments and ratings of that flight given by the customers
-
-	Initial idea:
-	Seeing each flight is already controlled by the 'search flights' functionality.
-
-	Maybe, much like I did with the toggle, something may be incorporated so that
-	all flights may be able to be clicked (once the admin finds the flight they're looking
-	for), then that flight would show its average ratings (easy to calculate with a simple query),
-	and all its comments with ratings attached next to them.
-
-	It would look something like this:
-	search flights:
-	(search bar etc.)
-	table
-	-- | -- | ....... | toggle  | view ratings
-	-- | -- | ....... | on-time | ratings
-
-	once the 'ratings' button would be touched, to make it easier on myself, I could make
-	a 'ratings' table pop up (jinja is good for this) below the 'flights' table, and
-	it would look something like this:
-
-	average rating: 4.5
-	reviews:
-	rating | comment
-	3.4    | lorem ipsum
-	4.3    | blah blah blah
-	... etc.
-
-	I think this is a pretty good idea, even though it is very barebones and doesn't
-	look pretty at all, it gets the job done.
-'''
 @app.route('/view_ratings', methods=['GET', 'POST'])
 @protected_route
 def view_ratings():
@@ -474,24 +431,20 @@ def view_ratings():
 
 	cursor = conn.cursor()
 	# for both, remember to deal with the case that no info is returned
-	# get the avg ratings
 	# get all the ratings related to the flight
 	query = 'select rate, comment from Review where airline_name = %s and flight_num = %s and departure_date_time = %s;'
-	# # TODO TODO TODO TODO FOR TESTING PURPOSES ONLY TODO TODO TODO TODO
-	# airline_name = 'Air France'
-	# flight_num = '61983286426849401608'
-	# departure_date_time = '2025-12-01 04:21:00'
 	cursor.execute(query, (airline_name, flight_num, departure_date_time))
 	
 	reviews = cursor.fetchall()
 
+	# get the avg ratings
 	query = 'select sum(rate) / count(rate) as average_rating from Review where airline_name = %s and flight_num = %s and departure_date_time = %s;'
 	cursor.execute(query, (airline_name, flight_num, departure_date_time))
 
 	average_rating = (cursor.fetchone())['average_rating']
 	
 	cursor.close()
-	return render_template('airline_staff.html', reviews = reviews, average_rating = average_rating)
+	return render_template('airline_staff.html', reviews = reviews, average_rating = average_rating, airplanes=session['airplanes'])
 
 
 
@@ -499,6 +452,7 @@ def view_ratings():
 # Get the current date and time in the appropriate format
 def getDateTime():
 	now = datetime.now()
+	# return the curr date returned from the library func in the appropriate format for querying
 	return now.strftime("%Y-%m-%d %H:%M:%S")
 
 
@@ -518,7 +472,6 @@ def randomNumberSize20():
     return str(random.randrange(0, 10**20))
 
 
-# TODO: Add the hash function you built in the other project to this one for encryption of the passwords
 # hashes passwords using MD5
 def hashPass(password):
 	# create a new MD5 hash object
