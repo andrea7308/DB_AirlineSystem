@@ -157,6 +157,11 @@
         <button type="submit">View Report</button>
     </form>
     {{ graph_html|safe }}
+        
+    {% if error4 %}
+    <p>{{ error4 }}</p>
+    {% endif %}
+
     <a href="{{ url_for('logout_admin') }}">Logout</a> <br>
 </body>
 

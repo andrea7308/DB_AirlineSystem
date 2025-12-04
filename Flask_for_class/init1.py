@@ -443,7 +443,7 @@ def purchaseFlight(flight_num):
 
 @app.route('/confirmPurchase', methods=['POST'])
 def confirmPurchase():
-	username = session['username']
+	customer_email = session['username']
 	cursor = conn.cursor()
 
 	airline_name = request.form['airline_name']
@@ -458,7 +458,7 @@ def confirmPurchase():
 			AND departure_date_time = %s
     		"""
 
-	cursor.execute(check, (username, airline_name, flight_num, departure_date_time))
+	cursor.execute(check, (customer_email, airline_name, flight_num, departure_date_time))
 	if cursor.fetchone():
 			query1 = """
 					SELECT ticket_id, airline_name, flight_num, departure_date_time
@@ -466,12 +466,12 @@ def confirmPurchase():
 					WHERE customer_email = %s
 					ORDER BY departure_date_time
 					"""
-			cursor.execute(query1, (username,))
+			cursor.execute(query1, (customer_email,))
 			flights = cursor.fetchall()
 			
 			cursor.close()
 
-			return render_template('customer.html', customer_email=username, flights=flights,
+			return render_template('customer.html', customer_email=customer_email, flights=flights,
 								message="You already purchased a ticket for this flight.")
 
 
@@ -488,7 +488,6 @@ def confirmPurchase():
 	name_on_card = request.form['name_on_card']
 	card_exp_date = request.form['card_exp_date']
 	card_exp_date = card_exp_date + "-01" 
-	customer_email = username
 
 	ins="""
 		insert into Ticket ( 
