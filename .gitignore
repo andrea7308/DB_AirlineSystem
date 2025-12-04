@@ -1,3 +1,8 @@
+# Ignore secrets
 .env
+
+# Ignore SSL certificates
+certs/ca.pem
 ./venv/
+./myvenv/
 ./Flask_for_class/simple.sql

@@ -7,10 +7,15 @@ from dotenv import load_dotenv
 from datetime import datetime # necessary for obtaining the current date and time
 import hashlib # this is used in the md5 helper func
 import random # this is used for the flight_num generation for inserting values into Flight
+import pandas as pd
+import plotly.express as px
+
+
 from functools import wraps # this is to use the protected thingy we learned from class
 import json
 import random
 
+# load_dotenv('/Users/sabriaislam/DB_AirlineSystem/Flask_for_class/.env')
 load_dotenv()
 
 #Initialize the app from Flask
@@ -36,6 +41,7 @@ conn = pymysql.connect(
         "ca": AIVEN_CA_PATH
 		}
 )
+
 
 
 #Define a route to hello function
@@ -76,7 +82,7 @@ def airlineLog():
 def loginAuth():
 	#grabs information from the forms
 	username = request.form['username']
-	password = request.form['password']
+	password = hashPass(request.form['password'])
 
 	#cursor used to send queries
 	cursor = conn.cursor()
@@ -102,13 +108,19 @@ def loginAuth():
 def registerAuthCustomer():
 
 	#stores the necessary info from customer
-	fields = [
-    "first_name", "last_name", "password", "building_num",
-    "street", "city", "state", "phone_number", "passport_num",
-    "passport_expiration", "passport_country", "dob"
-	]
-	
 	customer_email = request.form['customer_email']
+	first_name = request.form["first_name"]
+	last_name = request.form["last_name"]
+	password = request.form["password"]
+	building_num = request.form["building_num"]
+	street = request.form["street"]
+	city = request.form["city"]
+	state = request.form["state"]
+	phone_number = request.form["phone_number"]
+	passport_num = request.form["passport_num"]
+	passport_expiration = request.form["passport_expiration"]
+	passport_country = request.form["passport_country"]
+	dob = request.form["dob"]
 
 	#cursor used to send queries
 	cursor = conn.cursor()
@@ -117,26 +129,23 @@ def registerAuthCustomer():
 	cursor.execute(query, (customer_email))
 	#stores the results in a variable
 	data = cursor.fetchone()
-	#use fetchall() if you are expecting more than 1 data row
 	error = None
 	if(data):
 		#If the previous query returns data, then user exists
 		error = "This user already exists"
-		return render_template('register.html', error = error)
+		return render_template('customer_register.html', error = error)
 	else:
-		# fields from html arr
-		arr = list()
-		arr.append(customer_email)
-		# loop over the fields
-		for field in fields:
-			arr.append(request.form[field])
 		ins = 'INSERT INTO Customer VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)'
-		cursor.execute(ins, tuple(arr))
+		cursor.execute(ins, (
+				customer_email, first_name, last_name, 
+				hashPass(password), building_num, street, 
+				city, state, phone_number, passport_num, 
+				passport_expiration, passport_country, dob
+				)
+		)
 		conn.commit()
 		cursor.close()
 		return render_template('index.html')
-	cursor.close()
-
 
 # ========== AIRLINE STAFF RELATED FUNCTIONS ==========
 # This is a decorator that will make the route only accessible to logged in airline staff
@@ -271,7 +280,7 @@ def airline_staff():
 # Search for flights as an airline staff
 @app.route('/searchFlights', methods=['GET', 'POST'])
 @protected_route
-def searchFlight():
+def searchFlights():
 	start_date = request.form['start_date']
 	end_date = request.form['end_date']
 	dept_code = request.form['dept_code']
@@ -332,13 +341,12 @@ def logout_admin():
 	session.pop('username')
 	session.pop('airline_name')
 	session.pop('airplanes')
+	return redirect('/')
 
-	
 @app.route('/customerPage', methods=['GET', 'POST'])
+@protected_route
 def customerPage():
 	customer_email = session.get('username')
-	if (not customer_email):
-		redirect(url_for('login'))
 	cursor = conn.cursor()
 	
 	query1 ="""
@@ -362,12 +370,10 @@ def customerPage():
 	cursor.close()
 	return render_template('customer.html', customer_email=customer_email, flights=data1, reviews=data2)
 
-
 @app.route('/reviewPage', methods=['GET'])
+@protected_route
 def reviewPage():
 	customer_email = session.get('username')
-	if (not customer_email):
-		return redirect(url_for('login'))
 	cursor = conn.cursor()
 
 	# all the reviews made by customer
@@ -429,12 +435,8 @@ def displayFlights():
 	return render_template('displayFlights.html')
 
 @app.route('/purchaseFlight/<flight_num>', methods=['GET'])
+@protected_route
 def purchaseFlight(flight_num):
-	customer_email = session.get('username')
-
-	if (not customer_email):
-		return redirect(url_for('login'))
-	
 	cursor = conn.cursor()
 
 	query = """
@@ -534,8 +536,9 @@ def purchaseSuccess():
     return render_template('purchaseSuccess.html')
 
 
-@app.route('/searchFlights', methods=['GET', 'POST'])
-def searchFlights():
+@app.route('/searchFlightsCustomer', methods=['GET', 'POST'])
+@protected_route
+def searchFlightsCustomer():
 	cursor = conn.cursor()
 
 	dept_airport = request.form['departure_airport']
@@ -580,35 +583,48 @@ def searchFlights():
 
 	cursor.close()
 
-	return render_template('searchFlights.html', flights=flights)
-
-@app.route('/home')
-def home():
-    
-    username = session['username']
-    cursor = conn.cursor()
-    query = 'SELECT * from Flight'
-    cursor.execute(query)
-    data1 = cursor.fetchall() 
-    cursor.close()
-    return render_template('home.html', username=username, flights=data1)
-
-		
-# @app.route('/post', methods=['GET', 'POST'])
-# def post():
-# 	username = session['username']
-# 	cursor = conn.cursor();
-# 	blog = request.form['blog']
-# 	query = 'INSERT INTO blog (blog_post, username) VALUES(%s, %s)'
-# 	cursor.execute(query, (blog, username))
-# 	conn.commit()
-# 	cursor.close()
-# 	return redirect(url_for('home'))
+	return render_template('searchFlightsCustomer.html', flights=flights)
 
 @app.route('/logout')
 def logout():
 	session.pop('username')
 	return redirect('/')
+
+@app.route('/search_flights', methods=['GET'])
+def search_flights():
+	trip_type = request.args.get('trip_type', 'oneway')
+	dept_airport = request.args.get('dept_airport')
+	arr_airport = request.args.get('arr_airport')
+	depart_date = request.args.get('depart_date')
+	return_date = request.args.get('return_date')
+
+	outbound_flights = []
+	return_flights = []
+	if dept_airport and arr_airport and depart_date:
+		cursor = conn.cursor(pymysql.cursors.DictCursor)
+		outbound_query = """
+            SELECT *
+            FROM Flight
+            WHERE dept_airport = %s
+              AND arr_airport = %s
+              AND DATE(departure_date_time) = %s;
+        """
+		cursor.execute(outbound_query, (dept_airport, arr_airport, depart_date))
+		outbound_flights = cursor.fetchall()
+	if trip_type == 'roundtrip' and return_date:
+		cursor = conn.cursor(pymysql.cursors.DictCursor)
+		return_query = """
+                SELECT *
+                FROM Flight
+                WHERE dept_airport = %s
+                  AND arr_airport = %s
+                  AND DATE(departure_date_time) = %s;
+            """
+		cursor.execute(return_query, (arr_airport, dept_airport, return_date))
+		return_flights = cursor.fetchall()
+		cursor.close()
+	return render_template('search_flights.html', outbound_flights=outbound_flights, return_flights=return_flights,
+    trip_type=trip_type)
 
 
 # Search for flights as an airline staff
@@ -713,6 +729,43 @@ def toggle_status():
 	# load the whole page again; this time will reflect our changes
 	return redirect(url_for('airline_staff'))
 
+## Create bar chart of monthly ticket spendings ###
+@app.route("/view_reports", methods=["GET","POST"])
+@protected_route
+def view_reports():
+	start_date = request.args.get('start_date')
+	end_date = request.args.get('end_date')
+	query = """SELECT DATE_FORMAT(purchase_date_time, '%%Y-%%m') AS month, COUNT(*) AS tickets_sold
+		FROM Ticket
+		WHERE purchase_date_time BETWEEN %s AND %s
+		GROUP BY month
+		ORDER BY month;
+	"""
+
+	cursor = conn.cursor()
+	cursor.execute(query, (start_date, end_date))
+	data = cursor.fetchall()
+	df = pd.DataFrame(data)
+
+	if df.empty:
+		error = "No data available for the selected range."
+		return render_template("airline_staff.html", error4=error)
+
+	fig = px.bar(
+        df,
+        x="month",
+        y="tickets_sold",
+        title=f"Tickets Sold per Month ({start_date} to {end_date})",
+        labels={"month": "Month", "tickets_sold": "Tickets Sold"}
+    )
+	graph_html = fig.to_html(full_html=False)
+	
+	return render_template(
+        "airline_staff.html",
+        graph_html=graph_html,
+        start_date=start_date,
+        end_date=end_date
+    )
 
 # TODO: Implement the 'View flight ratings' functionality
 @app.route('/view_ratings', methods=['GET', 'POST'])
