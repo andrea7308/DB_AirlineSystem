@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Search Flights</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; }
+        form { max-width: 400px; }
+        label { display: block; margin-top: 15px; }
+        input, select {
+            width: 100%;
+            padding: 8px;
+            margin-top: 5px;
+        }
+        button {
+            margin-top: 20px;
+            padding: 10px 18px;
+            background-color: #0077cc;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+<h1>Search for Flights</h1>
+
+<form action="/searchFlights" method="POST">
+
+    <label>Departure Airport</label>
+    <input type="text" name="departure_airport" placeholder="e.g. JFK" required>
+
+    <label>Arrival Airport</label>
+    <input type="text" name="arrival_airport" placeholder="e.g. LAX" required>
+
+    <label>Departure Date</label>
+    <input type="date" name="departure_date" required>
+
+    <button type="submit">Search Flights</button>
+</form>
+
+</body>
+</html>

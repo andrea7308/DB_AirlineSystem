@@ -1,0 +1,33 @@
+<h1>Purchase Flight</h1>
+
+<h3>Flight Details</h3>
+<p><strong>Airline:</strong> {{ flight.airline_name }}</p>
+<p><strong>Flight Number:</strong> {{ flight.flight_num }}</p>
+<p><strong>Departure:</strong> {{ flight.departure_date_time }}</p>
+<p><strong>Arrival:</strong> {{ flight.arrival_date_time }}</p>
+
+<h3>Payment Information</h3>
+
+<form action="{{ url_for('confirmPurchase') }}" method="POST">
+
+    <input type="hidden" name="airline_name" value="{{ flight.airline_name }}">
+    <input type="hidden" name="flight_num" value="{{ flight.flight_num }}">
+    <input type="hidden" name="departure_date_time" value="{{ flight.departure_date_time }}">
+
+    <label>Card Type</label>
+    <select name="card_type" required>
+        <option value="debit">Debit</option>
+        <option value="credit">Credit</option>
+    </select>
+
+    <label>Card Number</label>
+    <input type="text" name="card_number" required>
+
+    <label>Name on Card</label>
+    <input type="text" name="name_on_card" required>
+
+    <label>Expiration Date</label>
+    <input type="month" name="card_exp_date" required>
+
+    <button type="submit">Confirm Purchase</button>
+</form>
