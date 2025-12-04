@@ -1,5 +1,3 @@
 .env
-
-.venv/
-
-simple.sql
+./venv/
+./Flask_for_class/simple.sql

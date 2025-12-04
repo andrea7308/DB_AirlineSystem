@@ -1,14 +1,19 @@
 #Import Flask Library
+
 from flask import Flask, render_template, request, session, url_for, redirect
 import pymysql.cursors
 import os
 from dotenv import load_dotenv
 from datetime import datetime # necessary for obtaining the current date and time
+import hashlib # this is used in the md5 helper func
 import random # this is used for the flight_num generation for inserting values into Flight
 import pandas as pd
 import plotly.express as px
 
 
+from functools import wraps # this is to use the protected thingy we learned from class
+import json
+import random
 
 load_dotenv()
 
@@ -47,16 +52,16 @@ def hello():
 #Define route for login
 @app.route('/login')
 def login():
-	return render_template('login.html')
+	return render_template('customer_login.html')
 
 
 #Define route for register
 @app.route('/register')
 def register():
-	return render_template('register.html')
+	return render_template('customer_register.html')
 
 
-# AIRLINE STAFF LOGIN AND REGISTRATION PAGES
+# ====== AIRLINE STAFF LOGIN AND REGISTRATION PAGE RENDERING ======
 # Defines route for airline staff registration page
 @app.route('/airline_staff_registration')
 def airlineReg():
@@ -69,45 +74,44 @@ def airlineLog():
 	return render_template('airline_staff_login.html')
 
 
-# AUTHENTICATION PAGES FOR 
+# AUTHENTICATION PAGES FOR CUSTOMER LOGIN
 #Authenticates the login - customer login
 @app.route('/loginAuth', methods=['GET', 'POST'])
 def loginAuth():
 	#grabs information from the forms
-	username = request.form['email']
+	username = request.form['username']
 	password = request.form['password']
 
 	#cursor used to send queries
 	cursor = conn.cursor()
 	#executes query
-	query = 'SELECT * FROM Customer WHERE email = %s and password = %s'
+	query = 'SELECT * FROM Customer WHERE customer_email = %s and password = %s'
 	cursor.execute(query, (username, password))
 	#stores the results in a variable
 	data = cursor.fetchone()
-	#use fetchall() if you are expecting more than 1 data row
+	#use fetchall() if you are expecting more than 1 data row (just notes for my own learning)
 	cursor.close()
-	error = None
 	if(data):
 		#creates a session for the the user
 		#session is a built in
-		session['email'] = username
-		return redirect(url_for('home'))
+		session['username'] = username
+		return redirect(url_for('customerPage'))
 	else:
 		#returns an error message to the html page
 		error = 'Invalid login or username'
-		return render_template('login.html', error=error)
+		return render_template('customer_login.html', error=error)
 
+#Authenticates the register
+@app.route('/registerAuthCustomer', methods=['GET', 'POST'])
+def registerAuthCustomer():
 
-#Authenticates the register - customer register
-@app.route('/registerAuth', methods=['GET', 'POST'])
-def registerAuth():
-	#grabs information from the forms
-
+	#stores the necessary info from customer
 	fields = [
-    "first_name", "last_name", "building_num",
+    "first_name", "last_name", "password", "building_num",
     "street", "city", "state", "phone_number", "passport_num",
-    "passport_expiration", "passport_country", "dob", "password"
+    "passport_expiration", "passport_country", "dob"
 	]
+	
 	customer_email = request.form['customer_email']
 
 	#cursor used to send queries
@@ -124,8 +128,14 @@ def registerAuth():
 		error = "This user already exists"
 		return render_template('register.html', error = error)
 	else:
-		ins = 'INSERT INTO Customer VALUES(%s, %s)'
-		cursor.execute(ins, (username, password))
+		# fields from html arr
+		arr = list()
+		arr.append(customer_email)
+		# loop over the fields
+		for field in fields:
+			arr.append(request.form[field])
+		ins = 'INSERT INTO Customer VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)'
+		cursor.execute(ins, tuple(arr))
 		conn.commit()
 		cursor.close()
 		return render_template('index.html')
@@ -133,40 +143,52 @@ def registerAuth():
 
 
 # ========== AIRLINE STAFF RELATED FUNCTIONS ==========
+
+
+# This is a decorator that will make the route only accessible to logged in airline staff
+# Make sure to import functools
+def protected_route(route):
+	@wraps(route)
+	def wrapper(*args, **kwargs):
+		if session.get('username'):
+			return route(*args, **kwargs) # Direct to the actual function implementation
+		else:
+			return render_template('index.html') # Redirect to unauthorized page or whatever of your choice
+	return wrapper
+
+
 # authenticates the register - admin register
 @app.route('/airlineRegAuth', methods=['GET', 'POST'])
 def airlineRegAuth():
 	#grabs information from the forms
-
 	# username has to be checked if already exists
 	admin_username = request.form['username']
 
 	# airline_name has to be checked if exists
 	airline_name = request.form['airline_name']
 
-	# list of fields which need to be added to the db
-	fields = [
-		"password", "first_name", "last_name", "dob", "airlinestaff_email"
-	]
+	# rest of the attributes needed for registration
+	password = request.form['password']
+	first_name = request.form['first_name']
+	last_name = request.form['last_name']
+	dob = request.form['dob']
+	airlinestaff_email = request.form['airlinestaff_email']
 
 	#cursor used to send queries; general purpose connection with the db
 	cursor = conn.cursor()
 
 	# check if the username is already taken in Airline_Staff table
-	query = 'SELECT * FROM Airline_Staff WHERE username = %s'
+	query = 'SELECT * FROM Airline_Staff WHERE username = %s;'
 	cursor.execute(query, (admin_username))
 	#stores the results in a variable
 	data = cursor.fetchone()
-	#use fetchall() if you are expecting more than 1 data row
 
 	# check if the airline name is present in the Airline table
-	query = 'SELECT * FROM Airline WHERE airline_name = %s'
+	query = 'SELECT * FROM Airline WHERE airline_name = %s;'
 	cursor.execute(query, (airline_name))
 	
 	data2 = cursor.fetchone()
 
-	# execute next query
-	error = None
 	if(data):
 		#If the previous query returns data, then user exists
 		error = "This user already exists"
@@ -178,15 +200,9 @@ def airlineRegAuth():
 	else:
 		# insert the appropriate values into the Airline_Staff table
 		# insertions are in the order which tuple for the Airline_Staff table must be inserted
-		arr = list()
-		arr.append(admin_username)
-		for field in fields:
-			arr.append(request.form[field])
-		arr.append(airline_name)
-
-		# insert the values into the Airline_Staff table
 		ins = 'INSERT INTO Airline_Staff VALUES(%s, %s, %s, %s, %s, %s, %s)'
-		cursor.execute(ins, tuple(arr))
+		# password must be hashed before being inserted into the table; done through helper func
+		cursor.execute(ins, (username, hashPass(password), first_name, last_name, dob, airlinestaff_email, airline_name))
 
 		# close the cursor's connection and commit changes
 		conn.commit()
@@ -201,18 +217,16 @@ def airlineRegAuth():
 def airlineLogAuth():
 	#grabs information from the forms
 	username = request.form['username']
-	password = request.form['password']
+	password = hashPass(request.form['password'])
 
 	#cursor used to send queries
 	cursor = conn.cursor()
 	#executes query
-	query = 'SELECT * FROM Airline_Staff WHERE username = %s and password = %s'
+	query = 'SELECT * FROM Airline_Staff WHERE username = %s and password = %s;'
 	cursor.execute(query, (username, password))
 	#stores the results in a variable
 	data = cursor.fetchone()
-	#use fetchall() if you are expecting more than 1 data row
 	cursor.close()
-	error = None
 	if(data):
 		#creates a session for the the user
 		#session is a built in
@@ -226,18 +240,19 @@ def airlineLogAuth():
 
 
 @app.route('/airline_staff')
+@protected_route
 def airline_staff():
 	username = session['username']
 	airline_name = session['airline_name']
 	cursor = conn.cursor()
 	# default for search flights:
-	curr_date = getDateTime()
+	curr_date = getDateTime() # helper func which gets the curr date, and puts it in the right format to query for it in the db
 	query = 'select * from Flight where departure_date_time between %s and DATE_ADD(%s, INTERVAL 30 DAY) and airline_name = %s;'
 	cursor.execute(query, (curr_date, curr_date, airline_name))
 
 	flights = cursor.fetchall()
 
-	# for the create flights feature, get the airplane ids for the drop down
+	# for the create flights feature, get the airplane ids for the drop down and the initial airplane table
 	query = 'select * from Airplane where airline_name = %s;'
 	cursor.execute(query, (airline_name))
 	airplanes = cursor.fetchall()
@@ -251,6 +266,7 @@ def airline_staff():
 
 # Search for flights as an airline staff
 @app.route('/searchFlights', methods=['GET', 'POST'])
+@protected_route
 def searchFlight():
 	start_date = request.form['start_date']
 	end_date = request.form['end_date']
@@ -262,7 +278,7 @@ def searchFlight():
 	cursor = conn.cursor()
 
 	# to shorten the cases, you can either have:
-	# none (default)
+	# none (default); no input given to the search
 	if (not start_date and not end_date and not dept_code and not arr_code):
 		curr_date = getDateTime()
 		query = 'select * from Flight where departure_date_time between %s and DATE_ADD(%s, INTERVAL 30 DAY) and airline_name = %s;'
@@ -282,7 +298,7 @@ def searchFlight():
 		flights = cursor.fetchall()
 		cursor.close()
 		return render_template('airline_staff.html', flights=flights, airplanes=session['airplanes'])
-	# only start or end dates
+	# only start and end dates
 	elif (start_date and end_date and not dept_code and not arr_code):
 		# use helper function to convert the times from form to appropriate type
 		start_date = datetimelocalToDatetime(start_date)
@@ -312,16 +328,291 @@ def logout_admin():
 	session.pop('username')
 	session.pop('airline_name')
 	session.pop('airplanes')
+@app.route('/customerPage', methods=['GET', 'POST'])
+def customerPage():
+	customer_email = session.get('username')
+	if (not customer_email):
+		redirect(url_for('login'))
+	cursor = conn.cursor()
+	
+	query1 ="""
+			select t.ticket_id, t.airline_name, t.flight_num, 
+				f.departure_date_time, f.arrival_date_time 
+			from Ticket as t 
+			join Flight as f 
+			on t.airline_name = f.airline_name 
+			and t.flight_num = f.flight_num 
+			and t.departure_date_time = f.departure_date_time 
+			where t.customer_email = %s 
+			and f.departure_date_time >= now()
+			"""
+	cursor.execute(query1, (customer_email,))
+	data1 = cursor.fetchall()
+	
+	query2 = 'select r.rate, r.comment, r.airline_name, r.departure_date_time from Review as r where r.customer_email = %s  order by departure_date_time asc'
+	cursor.execute(query2, (customer_email,))
+	data2 = cursor.fetchall()
+
+	cursor.close()
+	return render_template('customer.html', customer_email=customer_email, flights=data1, reviews=data2)
+
+
+@app.route('/reviewPage', methods=['GET'])
+def reviewPage():
+	customer_email = session.get('username')
+	if (not customer_email):
+		return redirect(url_for('login'))
+	cursor = conn.cursor()
+
+	# all the reviews made by customer
+	query1 ="""
+			select rate, comment, airline_name, departure_date_time, flight_num
+			from Review 
+			where customer_email = %s
+			"""
+	
+	cursor.execute(query1, (customer_email,))
+	reviews = cursor.fetchall()
+
+	query2 ="""
+			select t.ticket_id, t.airline_name, t.flight_num, 
+				f.departure_date_time, f.arrival_date_time 
+			from Ticket as t 
+			join Flight as f 
+			on t.airline_name = f.airline_name 
+			and t.flight_num = f.flight_num 
+			and t.departure_date_time = f.departure_date_time 
+			where t.customer_email = %s 
+			and f.departure_date_time < now()
+			"""
+	
+	cursor.execute(query2, (customer_email,))
+	flights = cursor.fetchall()
+
+	cursor.close()
+
+	return render_template('reviews.html', reviews=reviews, flights=flights )
+
+@app.route('/review', methods=['POST'])
+def review():
+	customer_email = session.get('username')
+	cursor = conn.cursor()
+
+	flight_info = json.loads(request.form['flight'])
+	airline_name = flight_info['airline_name']
+	flight_num = flight_info['flight_num']
+	departure_date_time = flight_info['departure_date_time']
+
+	rating = request.form['rating']
+	comment = request.form['comment']
+
+	ins ="""
+		 insert into Review(customer_email, flight_num, 
+		 	departure_date_time, airline_name, rate, comment) 
+		 values (%s, %s, %s, %s, %s, %s)
+		 """
+
+	cursor.execute(ins, (customer_email, flight_num, departure_date_time, airline_name, rating, comment))
+	conn.commit()
+	cursor.close()
+
+	return redirect(url_for('reviewPage'))
+
+@app.route('/displayFlights', methods=['GET', 'POST'])
+def displayFlights():
+	return render_template('displayFlights.html')
+
+@app.route('/purchaseFlight/<flight_num>', methods=['GET'])
+def purchaseFlight(flight_num):
+	customer_email = session.get('username')
+
+	if (not customer_email):
+		return redirect(url_for('login'))
+	
+	cursor = conn.cursor()
+
+	query = """
+			SELECT * FROM Flight
+			WHERE flight_num = %s
+    		"""
+	cursor.execute(query, (flight_num,))
+	flight = cursor.fetchone()
+
+	cursor.close()
+	return render_template('purchaseFlight.html', flight=flight)
+
+@app.route('/confirmPurchase', methods=['POST'])
+def confirmPurchase():
+	username = session['username']
+	cursor = conn.cursor()
+
+	airline_name = request.form['airline_name']
+	flight_num = request.form['flight_num']
+	departure_date_time = request.form['departure_date_time']
+
+	check =	"""
+			SELECT * FROM Ticket
+			WHERE customer_email = %s
+			AND airline_name = %s
+			AND flight_num = %s
+			AND departure_date_time = %s
+    		"""
+
+	cursor.execute(check, (username, airline_name, flight_num, departure_date_time))
+	if cursor.fetchone():
+			query1 = """
+					SELECT ticket_id, airline_name, flight_num, departure_date_time
+					FROM Ticket
+					WHERE customer_email = %s
+					ORDER BY departure_date_time
+					"""
+			cursor.execute(query1, (username,))
+			flights = cursor.fetchall()
+			
+			cursor.close()
+
+			return render_template('customer.html', customer_email=username, flights=flights,
+								message="You already purchased a ticket for this flight.")
+
+
+	cursor.execute("select ticket_id from Ticket")
+	all_ticket_ids = [row['ticket_id'] for row in cursor.fetchall()]
+
+	
+	ticket_id = random.randint(1000, 9999)
+	while ticket_id in all_ticket_ids:
+		ticket_id = random.randint(1000, 9999)
+
+	card_type = request.form['card_type']
+	card_number = request.form['card_number']
+	name_on_card = request.form['name_on_card']
+	card_exp_date = request.form['card_exp_date']
+	card_exp_date = card_exp_date + "-01" 
+	customer_email = username
+
+	ins="""
+		insert into Ticket ( 
+			ticket_id,
+			card_type,
+			card_number,
+			name_on_card,
+			purchase_date_time,
+			card_exp_date,
+			customer_email,
+			airline_name,
+			flight_num,
+			departure_date_time
+		)
+		values (%s, %s, %s, %s, now(), %s, %s, %s, %s, %s)
+		"""
+	
+	cursor.execute(ins, (
+		ticket_id, 
+		card_type, 
+		card_number, 
+		name_on_card, 
+		card_exp_date, 
+		customer_email, 
+		airline_name, 
+		flight_num, 
+		departure_date_time
+	))
+	
+	conn.commit()
+	cursor.close()
+
+	return redirect(url_for('purchaseSuccess'))
+
+@app.route('/purchaseSuccess')
+def purchaseSuccess():
+    return render_template('purchaseSuccess.html')
+
+
+@app.route('/searchFlights', methods=['GET', 'POST'])
+def searchFlights():
+	cursor = conn.cursor()
+
+	dept_airport = request.form['departure_airport']
+	arr_airport = request.form['arrival_airport']
+	departure_date = request.form['departure_date']
+
+	query1 = """
+			SELECT 
+				f.airline_name,
+				f.flight_num,
+				f.departure_date_time,
+				f.arrival_date_time,
+				f.dept_airport,
+				f.arr_airport,
+				f.flight_price,
+				f.flight_status,
+				a.num_of_seats,
+				COUNT(t.ticket_id) AS tickets_sold
+			FROM Flight AS f
+			JOIN Airplane AS a 
+				ON f.airplane_id = a.airplane_id 
+				AND f.airline_name = a.airline_name
+			LEFT JOIN Ticket AS t 
+				ON t.airline_name = f.airline_name
+			AND t.flight_num = f.flight_num
+			AND DATE(t.departure_date_time) = DATE(f.departure_date_time)
+			WHERE f.dept_airport = %s
+			AND f.arr_airport = %s
+			AND DATE(f.departure_date_time) = %s
+			AND f.departure_date_time > NOW()
+			GROUP BY 
+				f.airline_name,
+				f.flight_num,
+				f.departure_date_time,
+				a.num_of_seats
+			HAVING tickets_sold < a.num_of_seats;
+			"""
+
+	cursor.execute(query1, (dept_airport, arr_airport, departure_date))
+	flights = cursor.fetchall()
+
+
+	cursor.close()
+
+	return render_template('searchFlights.html', flights=flights)
+
+@app.route('/home')
+def home():
+    
+    username = session['username']
+    cursor = conn.cursor()
+    query = 'SELECT * from Flight'
+    cursor.execute(query)
+    data1 = cursor.fetchall() 
+    cursor.close()
+    return render_template('home.html', username=username, flights=data1)
+
+		
+# @app.route('/post', methods=['GET', 'POST'])
+# def post():
+# 	username = session['username']
+# 	cursor = conn.cursor();
+# 	blog = request.form['blog']
+# 	query = 'INSERT INTO blog (blog_post, username) VALUES(%s, %s)'
+# 	cursor.execute(query, (blog, username))
+# 	conn.commit()
+# 	cursor.close()
+# 	return redirect(url_for('home'))
+
+@app.route('/logout')
+def logout():
+	session.pop('username')
 	return redirect('/')
 
 
 # Search for flights as an airline staff
 @app.route('/createFlight', methods=['GET', 'POST'])
+@protected_route
 def createFlight():
 	# values which will be inserted into the db; are in basic order in which they will be inserted
 	airplane_id = request.form.get('airplane_name')
 	airline_name = session['airline_name']
-	flight_num = randomNumberSize20()
+	flight_num = randomNumberSize20() # flight num has to be unique within a given airline; accomplished through random number generation with max size of varchar(20)
 	departure_date_time = request.form['departure_date_time']
 	arrival_date_time = request.form['arrival_date_time']
 	dept_airport = request.form['dept_airport']
@@ -331,6 +622,7 @@ def createFlight():
 
 	# checks if drop down menu value was selected or not
 	if (not airplane_id):
+		error2 = 'Please select an airplane from the dropdown menu'
 		return render_template('airline_staff.html', error2 = error2, airplanes=session['airplanes'])
 
 	cursor = conn.cursor()
@@ -341,11 +633,12 @@ def createFlight():
 	conn.commit()
 	cursor.close()
 
-	return redirect(url_for('airline_staff'))
+	return redirect(url_for('airline_staff')) # used redirect so that the page reloads with all the updated elements
 
 
 # Add an airplane to the airline you work for
 @app.route('/addAirplane', methods=['GET', 'POST'])
+@protected_route
 def addAirplane():
 	airline_name = session['airline_name']
 	num_of_seats = request.form['num_of_seats']
@@ -372,7 +665,7 @@ def addAirplane():
 		conn.commit()
 		
 
-		# update the value of session['airplanes']:
+		# update the value of session['airplanes'], since it now has a new airplane in it:
 		query = 'select * from Airplane where airline_name = %s;'
 		cursor.execute(query, (airline_name))
 		session['airplanes'] = cursor.fetchall()
@@ -382,8 +675,9 @@ def addAirplane():
 		return redirect(url_for('airline_staff'))
 
 
-# Toggle the status of a flight which the toggle button was pressed for
+# Toggle the status of a flight which the toggle button was pressed for; toggle button on search flights table
 @app.route("/toggle_status", methods=['GET', 'POST'])
+@protected_route
 def toggle_status():
 	airline_name = session['airline_name']
 	flight_num = request.form['flight_num']
@@ -398,7 +692,7 @@ def toggle_status():
 	data = cursor.fetchone()
 
 	# get the current status which the flight is
-	current_status = (data)['flight_status'].lower()
+	current_status = (data)['flight_status'].lower() # did this b/c we inserted on-time and delayed in uppercase sometimes in our test cases
 
 	# depending on what the status is currently, change it to something new
 	new_status = "on-time" if current_status == "delayed" else "delayed"
@@ -446,10 +740,38 @@ def view_reports():
         end_date=end_date
     )
 
+# TODO: Implement the 'View flight ratings' functionality
+@app.route('/view_ratings', methods=['GET', 'POST'])
+@protected_route
+def view_ratings():
+	airline_name = session['airline_name']
+	flight_num = request.form['flight_num']
+	departure_date_time = request.form['departure_date_time']
+
+	cursor = conn.cursor()
+	# for both, remember to deal with the case that no info is returned
+	# get all the ratings related to the flight
+	query = 'select rate, comment from Review where airline_name = %s and flight_num = %s and departure_date_time = %s;'
+	cursor.execute(query, (airline_name, flight_num, departure_date_time))
+	
+	reviews = cursor.fetchall()
+
+	# get the avg ratings
+	query = 'select sum(rate) / count(rate) as average_rating from Review where airline_name = %s and flight_num = %s and departure_date_time = %s;'
+	cursor.execute(query, (airline_name, flight_num, departure_date_time))
+
+	average_rating = (cursor.fetchone())['average_rating']
+	
+	cursor.close()
+	return render_template('airline_staff.html', reviews = reviews, average_rating = average_rating, airplanes=session['airplanes'])
+
+
+
 # Helper functions
 # Get the current date and time in the appropriate format
 def getDateTime():
 	now = datetime.now()
+	# return the curr date returned from the library func in the appropriate format for querying
 	return now.strftime("%Y-%m-%d %H:%M:%S")
 
 
@@ -467,6 +789,20 @@ def datetimelocalToDatetime(datetimelocal):
 # Create a random number of max length 20
 def randomNumberSize20():
     return str(random.randrange(0, 10**20))
+
+
+# hashes passwords using MD5
+def hashPass(password):
+	# create a new MD5 hash object
+	m = hashlib.md5()
+
+    # update the hash object with the bytes-like object (encoded string)
+	m.update(password.encode('utf-8'))
+
+    # get the hash in a human-readable hexadecimal format
+	md5_hash = m.hexdigest()
+
+	return md5_hash
 
 		
 app.secret_key = 'some key that you will never guess'
