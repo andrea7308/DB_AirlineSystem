@@ -82,7 +82,7 @@ def airlineLog():
 def loginAuth():
 	#grabs information from the forms
 	username = request.form['username']
-	password = request.form['password']
+	password = hashPass(request.form['password'])
 
 	#cursor used to send queries
 	cursor = conn.cursor()
@@ -108,13 +108,19 @@ def loginAuth():
 def registerAuthCustomer():
 
 	#stores the necessary info from customer
-	fields = [
-    "first_name", "last_name", "password", "building_num",
-    "street", "city", "state", "phone_number", "passport_num",
-    "passport_expiration", "passport_country", "dob"
-	]
-	
 	customer_email = request.form['customer_email']
+	first_name = request.form["first_name"]
+	last_name = request.form["last_name"]
+	password = request.form["password"]
+	building_num = request.form["building_num"]
+	street = request.form["street"]
+	city = request.form["city"]
+	state = request.form["state"]
+	phone_number = request.form["phone_number"]
+	passport_num = request.form["passport_num"]
+	passport_expiration = request.form["passport_expiration"]
+	passport_country = request.form["passport_country"]
+	dob = request.form["dob"]
 
 	#cursor used to send queries
 	cursor = conn.cursor()
@@ -123,26 +129,23 @@ def registerAuthCustomer():
 	cursor.execute(query, (customer_email))
 	#stores the results in a variable
 	data = cursor.fetchone()
-	#use fetchall() if you are expecting more than 1 data row
 	error = None
 	if(data):
 		#If the previous query returns data, then user exists
 		error = "This user already exists"
-		return render_template('register.html', error = error)
+		return render_template('customer_register.html', error = error)
 	else:
-		# fields from html arr
-		arr = list()
-		arr.append(customer_email)
-		# loop over the fields
-		for field in fields:
-			arr.append(request.form[field])
 		ins = 'INSERT INTO Customer VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)'
-		cursor.execute(ins, tuple(arr))
+		cursor.execute(ins, (
+				customer_email, first_name, last_name, 
+				hashPass(password), building_num, street, 
+				city, state, phone_number, passport_num, 
+				passport_expiration, passport_country, dob
+				)
+		)
 		conn.commit()
 		cursor.close()
 		return render_template('index.html')
-	cursor.close()
-
 
 # ========== AIRLINE STAFF RELATED FUNCTIONS ==========
 
@@ -204,7 +207,7 @@ def airlineRegAuth():
 		# insertions are in the order which tuple for the Airline_Staff table must be inserted
 		ins = 'INSERT INTO Airline_Staff VALUES(%s, %s, %s, %s, %s, %s, %s)'
 		# password must be hashed before being inserted into the table; done through helper func
-		cursor.execute(ins, (username, hashPass(password), first_name, last_name, dob, airlinestaff_email, airline_name))
+		cursor.execute(ins, (admin_username, hashPass(password), first_name, last_name, dob, airlinestaff_email, airline_name))
 
 		# close the cursor's connection and commit changes
 		conn.commit()
@@ -333,10 +336,9 @@ def logout_admin():
 	return redirect('/')
 
 @app.route('/customerPage', methods=['GET', 'POST'])
+@protected_route
 def customerPage():
 	customer_email = session.get('username')
-	if (not customer_email):
-		redirect(url_for('login'))
 	cursor = conn.cursor()
 	
 	query1 ="""
@@ -361,10 +363,9 @@ def customerPage():
 	return render_template('customer.html', customer_email=customer_email, flights=data1, reviews=data2)
 
 @app.route('/reviewPage', methods=['GET'])
+@protected_route
 def reviewPage():
 	customer_email = session.get('username')
-	if (not customer_email):
-		return redirect(url_for('login'))
 	cursor = conn.cursor()
 
 	# all the reviews made by customer
@@ -426,12 +427,8 @@ def displayFlights():
 	return render_template('displayFlights.html')
 
 @app.route('/purchaseFlight/<flight_num>', methods=['GET'])
+@protected_route
 def purchaseFlight(flight_num):
-	customer_email = session.get('username')
-
-	if (not customer_email):
-		return redirect(url_for('login'))
-	
 	cursor = conn.cursor()
 
 	query = """
@@ -532,6 +529,7 @@ def purchaseSuccess():
 
 
 @app.route('/searchFlightsCustomer', methods=['GET', 'POST'])
+@protected_route
 def searchFlightsCustomer():
 	cursor = conn.cursor()
 
@@ -579,29 +577,6 @@ def searchFlightsCustomer():
 
 	return render_template('searchFlightsCustomer.html', flights=flights)
 
-@app.route('/home')
-def home():
-    
-    username = session['username']
-    cursor = conn.cursor()
-    query = 'SELECT * from Flight'
-    cursor.execute(query)
-    data1 = cursor.fetchall() 
-    cursor.close()
-    return render_template('home.html', username=username, flights=data1)
-
-		
-# @app.route('/post', methods=['GET', 'POST'])
-# def post():
-# 	username = session['username']
-# 	cursor = conn.cursor();
-# 	blog = request.form['blog']
-# 	query = 'INSERT INTO blog (blog_post, username) VALUES(%s, %s)'
-# 	cursor.execute(query, (blog, username))
-# 	conn.commit()
-# 	cursor.close()
-# 	return redirect(url_for('home'))
-
 @app.route('/logout')
 def logout():
 	session.pop('username')
@@ -642,7 +617,6 @@ def search_flights():
 		cursor.close()
 	return render_template('search_flights.html', outbound_flights=outbound_flights, return_flights=return_flights,
     trip_type=trip_type)
-
 
 
 # Search for flights as an airline staff
@@ -749,6 +723,7 @@ def toggle_status():
 
 ## Create bar chart of monthly ticket spendings ###
 @app.route("/view_reports", methods=["GET","POST"])
+@protected_route
 def view_reports():
 	start_date = request.args.get('start_date')
 	end_date = request.args.get('end_date')
