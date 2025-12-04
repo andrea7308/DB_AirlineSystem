@@ -15,6 +15,7 @@ from functools import wraps # this is to use the protected thingy we learned fro
 import json
 import random
 
+# load_dotenv('/Users/sabriaislam/DB_AirlineSystem/Flask_for_class/.env')
 load_dotenv()
 
 #Initialize the app from Flask
@@ -40,6 +41,7 @@ conn = pymysql.connect(
         "ca": AIVEN_CA_PATH
 		}
 )
+
 
 
 #Define a route to hello function
@@ -603,6 +605,43 @@ def home():
 def logout():
 	session.pop('username')
 	return redirect('/')
+
+@app.route('/search_flights', methods=['GET'])
+def search_flights():
+	trip_type = request.args.get('trip_type', 'oneway')
+	dept_airport = request.args.get('dept_airport')
+	arr_airport = request.args.get('arr_airport')
+	depart_date = request.args.get('depart_date')
+	return_date = request.args.get('return_date')
+
+	outbound_flights = []
+	return_flights = []
+	if dept_airport and arr_airport and depart_date:
+		cursor = conn.cursor(pymysql.cursors.DictCursor)
+		outbound_query = """
+            SELECT *
+            FROM Flight
+            WHERE dept_airport = %s
+              AND arr_airport = %s
+              AND DATE(departure_date_time) = %s;
+        """
+		cursor.execute(outbound_query, (dept_airport, arr_airport, depart_date))
+		outbound_flights = cursor.fetchall()
+	if trip_type == 'roundtrip' and return_date:
+		cursor = conn.cursor(pymysql.cursors.DictCursor)
+		return_query = """
+                SELECT *
+                FROM Flight
+                WHERE dept_airport = %s
+                  AND arr_airport = %s
+                  AND DATE(departure_date_time) = %s;
+            """
+		cursor.execute(return_query, (arr_airport, dept_airport, return_date))
+		return_flights = cursor.fetchall()
+		cursor.close()
+	return render_template('search_flights.html', outbound_flights=outbound_flights, return_flights=return_flights,
+    trip_type=trip_type)
+
 
 
 # Search for flights as an airline staff
