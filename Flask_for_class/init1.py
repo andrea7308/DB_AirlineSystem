@@ -332,6 +332,8 @@ def logout_admin():
 	session.pop('username')
 	session.pop('airline_name')
 	session.pop('airplanes')
+
+	
 @app.route('/customerPage', methods=['GET', 'POST'])
 def customerPage():
 	customer_email = session.get('username')
