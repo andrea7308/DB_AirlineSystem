@@ -130,8 +130,6 @@ def registerAuth():
 
 
 # ========== AIRLINE STAFF RELATED FUNCTIONS ==========
-
-
 # This is a decorator that will make the route only accessible to logged in airline staff
 # Make sure to import functools
 def protected_route(route):
@@ -187,9 +185,19 @@ def airlineRegAuth():
 	else:
 		# insert the appropriate values into the Airline_Staff table
 		# insertions are in the order which tuple for the Airline_Staff table must be inserted
-		ins = 'INSERT INTO Airline_Staff VALUES(%s, %s, %s, %s, %s, %s, %s)'
+		ins = 'INSERT INTO Airline_Staff VALUES(%s, %s, %s, %s, %s, %s, %s);'
 		# password must be hashed before being inserted into the table; done through helper func
-		cursor.execute(ins, (username, hashPass(password), first_name, last_name, dob, airlinestaff_email, airline_name))
+		cursor.execute(ins, (admin_username, hashPass(password), first_name, last_name, dob, airlinestaff_email, airline_name))
+		conn.commit()
+
+		# get all values for the same name attributes
+		phone_numbers = list(set(request.form.getlist('phone_number')))
+		query = 'insert into Phone_Numbers values(%s, %s);'
+		for i in range(len(phone_numbers)):
+			if (not (phone_numbers[i] == '')):
+				# admin_username is still accessible here
+				phone_number = phone_numbers[i]
+				cursor.execute(query, (admin_username, phone_number))
 
 		# close the cursor's connection and commit changes
 		conn.commit()
@@ -248,7 +256,7 @@ def airline_staff():
 	session['airplanes'] = airplanes
 
 	cursor.close()
-	return render_template('airline_staff.html', username=username, flights=flights, airplanes=airplanes)
+	return render_template('airline_staff.html', flights=flights, airplanes=airplanes)
 
 
 # Search for flights as an airline staff
@@ -445,7 +453,6 @@ def view_ratings():
 	
 	cursor.close()
 	return render_template('airline_staff.html', reviews = reviews, average_rating = average_rating, airplanes=session['airplanes'])
-
 
 
 # Helper functions

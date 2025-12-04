@@ -26,6 +26,15 @@
         </br>
 
         <!-- TODO: Build the phone number entry functionality which allows the staff to add one, or many phone numbers -->
+        <div id="phone-fields-container">
+            <div class="phone-field-wrapper">
+                <label for="phone_number_1">Phone Number:</label>
+                <input type="text" name="phone_number" id="phone_number_1">
+                <!-- Name attribute is the same for all inputs to send as a list to python backend -->
+            </div>
+        </div>
+        <button type="button" id="add-phone-field">add another phone number</button>
+
         <!-- submit the form -->
         <input type="submit" value=Register />
         <!-- Error message to registration -->
@@ -33,6 +42,27 @@
         <p class="error"><strong>Error:</strong> {{error}}</p>
         {% endif %}
     </form>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', (event) => {
+            const addButton = document.getElementById('add-phone-field');
+            const container = document.getElementById('phone-fields-container');
+            let fieldCount = 1;
+
+            addButton.addEventListener('click', () => {
+                fieldCount++;
+                const newFieldWrapper = document.createElement('div');
+                newFieldWrapper.classList.add('phone-field-wrapper');
+                // Use template literals for cleaner HTML generation
+
+                newFieldWrapper.innerHTML = `
+                    <label for="phone_number_${fieldCount}">Phone Number:</label>
+                    <input type="text" name="phone_number" id="phone_number_${fieldCount}">
+                `;
+                container.appendChild(newFieldWrapper);
+            });
+        });
+    </script>
 </body>
 
 </html>
