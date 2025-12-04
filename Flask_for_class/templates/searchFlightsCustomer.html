@@ -28,32 +28,122 @@
         }
 
 </style>
-    {% if flights %}
-    <table>
+<!DOCTYPE html>
+<html>
+<head>
+</head>
+<script>
+        function toggleReturnDate() {
+            const roundtrip = document.getElementById("roundtrip").checked;
+            const container = document.getElementById("return-date-container");
+            container.style.display = roundtrip ? "block" : "none";
+        }
+
+        document.addEventListener("DOMContentLoaded", function() {
+            toggleReturnDate();
+        });
+    </script>
+<body>
+
+<form method="GET" action="/searchFlightsCustomer
+">
+       <p>
+       <strong>Trip Type:</strong><br>
+       <input type="radio" id="oneway" name="trip_type" value="oneway" onchange="toggleReturnDate()"
+       {% if request.args.get('trip_type', 'oneway') == 'oneway' %}checked{% endif %}>
+       <label for="oneway">One-way</label>
+
+       <input type="radio" id="roundtrip" name="trip_type" value="roundtrip" onchange="toggleReturnDate()"
+       {% if request.args.get('trip_type') == 'roundtrip' %}checked{% endif %}>
+       <label for="roundtrip">Round-trip</label>
+       </p>
+
+       <label for="dept_airport">Departure Airport Code:</label>
+       <input type="text" name="dept_airport" id="dept_airport"
+              placeholder="e.g. LGA"
+              value="{{ request.args.get('dept_airport', '') }}" required>
+
+       <label for="arr_airport">Arrival Airport Code:</label>
+       <input type="text" name="arr_airport" id="arr_airport"
+              placeholder="e.g. IAH"
+              value="{{ request.args.get('arr_airport', '') }}" required>
+
+       <label for="depart_date">Departure Date:</label>
+       <input type="date" name="depart_date" id="depart_date"
+              value="{{ request.args.get('depart_date', '') }}" required>
+       <div id="return-date-container">
+       <label for="return_date">Return Date:</label>
+       <input type="date" name="return_date" id="return_date"
+              value="{{ request.args.get('return_date', '') }}">
+       </div>
+
+
+    <button type="submit">Search</button>
+</form>
+
+{% if outbound_flights is defined %}
+    <h2>Outbound Flights</h2>
+
+    {% if outbound_flights %}
+        <table>
             <tr>
-                <th>Airline</th>
-                <th>Flight Number</th>
-                <th>Departure</th>
-                <th>Arrival</th>
-                <th>Price</th>
-                <th>Status</th>
-                <th></th>
+                <th>Flight #</th>
+                <th>From</th>
+                <th>To</th>
+                <th>Departure Time</th>
+                <th>Arrival Time</th>
+                <th>Purchase</th>
             </tr>
-        {% for flight in flights %}
-        <tr>
-            <td>{{ flight.airline_name }}</td>
-            <td>{{ flight.flight_num }}</td>
-            <td>{{ flight.departure_date_time }}</td>
-            <td>{{ flight.arrival_date_time }}</td>
-            <td>{{ flight.flight_price }}</td>
-            <td>{{ flight.flight_status }}</td>
-            <td>
-                <a href="{{ url_for('purchaseFlight', flight_num=flight.flight_num) }}"
-                class="action-button">Purchase</a>
-            </td>
-        </tr>
-        {% endfor %}
-    </table>
+            {% for f in outbound_flights %}
+            <tr>
+                <td>{{ f.flight_num }}</td>
+                <td>{{ f.dept_airport }}</td>
+                <td>{{ f.arr_airport }}</td>
+                <td>{{ f.departure_date_time }}</td>
+                <td>{{ f.arrival_date_time }}</td>
+                <td>
+                    <a href="{{ url_for('purchaseFlight', flight_num=f.flight_num) }}"
+                    class="action-button">Purchase</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </table>
     {% else %}
-        <p>No upcoming flights found.</p>
+        <p>No outbound flights found for that search.</p>
     {% endif %}
+{% endif %}
+
+{% if trip_type == 'roundtrip' %}
+    <h2>Return Flights</h2>
+
+    {% if return_flights %}
+        <table>
+            <tr>
+                <th>Flight #</th>
+                <th>From</th>
+                <th>To</th>
+                <th>Departure Time</th>
+                <th>Arrival Time</th>
+                <th>Purchase</th>
+            </tr>
+            {% for f in return_flights %}
+            <tr>
+                <td>{{ f.flight_num }}</td>
+                <td>{{ f.dept_airport }}</td>
+                <td>{{ f.arr_airport }}</td>
+                <td>{{ f.departure_date_time }}</td>
+                <td>{{ f.arrival_date_time }}</td>
+                <td>
+                    <a href="{{ url_for('purchaseFlight', flight_num=f.flight_num) }}"
+                    class="action-button">Purchase</a>
+                </td>                
+            </tr>
+            {% endfor %}
+        </table>
+    {% else %}
+        <p>No return flights found for that search.</p>
+    {% endif %}
+{% endif %}
+
+</body>
+</html>

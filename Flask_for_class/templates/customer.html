@@ -97,7 +97,7 @@
     <!-- Top button bar -->
     <div class="top-bar">
         <a href="{{ url_for('reviewPage') }}" class="top-button">My Reviews</a>
-        <a href="{{ url_for('displayFlights') }}" class="top-button">Purchase a Flight</a>
+        <a href="{{ url_for('searchFlightsCustomer') }}" class="top-button">Purchase a Flight</a>
 
         <form action="{{ url_for('logout') }}" method="get" style="display:inline;">
             <button type="submit" class="logout-button">Logout</button>
