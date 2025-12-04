@@ -269,7 +269,7 @@ def airline_staff():
 # Search for flights as an airline staff
 @app.route('/searchFlights', methods=['GET', 'POST'])
 @protected_route
-def searchFlight():
+def searchFlights():
 	start_date = request.form['start_date']
 	end_date = request.form['end_date']
 	dept_code = request.form['dept_code']
@@ -330,6 +330,8 @@ def logout_admin():
 	session.pop('username')
 	session.pop('airline_name')
 	session.pop('airplanes')
+	return redirect('/')
+
 @app.route('/customerPage', methods=['GET', 'POST'])
 def customerPage():
 	customer_email = session.get('username')
@@ -357,7 +359,6 @@ def customerPage():
 
 	cursor.close()
 	return render_template('customer.html', customer_email=customer_email, flights=data1, reviews=data2)
-
 
 @app.route('/reviewPage', methods=['GET'])
 def reviewPage():
@@ -530,8 +531,8 @@ def purchaseSuccess():
     return render_template('purchaseSuccess.html')
 
 
-@app.route('/searchFlights', methods=['GET', 'POST'])
-def searchFlights():
+@app.route('/searchFlightsCustomer', methods=['GET', 'POST'])
+def searchFlightsCustomer():
 	cursor = conn.cursor()
 
 	dept_airport = request.form['departure_airport']
@@ -576,7 +577,7 @@ def searchFlights():
 
 	cursor.close()
 
-	return render_template('searchFlights.html', flights=flights)
+	return render_template('searchFlightsCustomer.html', flights=flights)
 
 @app.route('/home')
 def home():
@@ -762,6 +763,10 @@ def view_reports():
 	cursor.execute(query, (start_date, end_date))
 	data = cursor.fetchall()
 	df = pd.DataFrame(data)
+
+	if df.empty:
+		error = "No data available for the selected range."
+		return render_template("airline_staff.html", error4=error)
 
 	fig = px.bar(
         df,
