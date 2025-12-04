@@ -7,6 +7,10 @@ from dotenv import load_dotenv
 from datetime import datetime # necessary for obtaining the current date and time
 import hashlib # this is used in the md5 helper func
 import random # this is used for the flight_num generation for inserting values into Flight
+import pandas as pd
+import plotly.express as px
+
+
 from functools import wraps # this is to use the protected thingy we learned from class
 import json
 import random
@@ -703,6 +707,38 @@ def toggle_status():
 	# load the whole page again; this time will reflect our changes
 	return redirect(url_for('airline_staff'))
 
+## Create bar chart of monthly ticket spendings ###
+@app.route("/view_reports", methods=["GET","POST"])
+def view_reports():
+	start_date = request.args.get('start_date')
+	end_date = request.args.get('end_date')
+	query = """SELECT DATE_FORMAT(purchase_date_time, '%%Y-%%m') AS month, COUNT(*) AS tickets_sold
+		FROM Ticket
+		WHERE purchase_date_time BETWEEN %s AND %s
+		GROUP BY month
+		ORDER BY month;
+	"""
+
+	cursor = conn.cursor()
+	cursor.execute(query, (start_date, end_date))
+	data = cursor.fetchall()
+	df = pd.DataFrame(data)
+
+	fig = px.bar(
+        df,
+        x="month",
+        y="tickets_sold",
+        title=f"Tickets Sold per Month ({start_date} to {end_date})",
+        labels={"month": "Month", "tickets_sold": "Tickets Sold"}
+    )
+	graph_html = fig.to_html(full_html=False)
+	
+	return render_template(
+        "airline_staff.html",
+        graph_html=graph_html,
+        start_date=start_date,
+        end_date=end_date
+    )
 
 # TODO: Implement the 'View flight ratings' functionality
 @app.route('/view_ratings', methods=['GET', 'POST'])
