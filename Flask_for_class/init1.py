@@ -430,10 +430,6 @@ def review():
 
 	return redirect(url_for('reviewPage'))
 
-@app.route('/displayFlights', methods=['GET', 'POST'])
-def displayFlights():
-	return render_template('displayFlights.html')
-
 @app.route('/purchaseFlight/<flight_num>', methods=['GET'])
 @protected_route
 def purchaseFlight(flight_num):
@@ -451,7 +447,7 @@ def purchaseFlight(flight_num):
 
 @app.route('/confirmPurchase', methods=['POST'])
 def confirmPurchase():
-	username = session['username']
+	customer_email = session['username']
 	cursor = conn.cursor()
 
 	airline_name = request.form['airline_name']
@@ -466,7 +462,7 @@ def confirmPurchase():
 			AND departure_date_time = %s
     		"""
 
-	cursor.execute(check, (username, airline_name, flight_num, departure_date_time))
+	cursor.execute(check, (customer_email, airline_name, flight_num, departure_date_time))
 	if cursor.fetchone():
 			query1 = """
 					SELECT ticket_id, airline_name, flight_num, departure_date_time
@@ -474,12 +470,12 @@ def confirmPurchase():
 					WHERE customer_email = %s
 					ORDER BY departure_date_time
 					"""
-			cursor.execute(query1, (username,))
+			cursor.execute(query1, (customer_email,))
 			flights = cursor.fetchall()
 			
 			cursor.close()
 
-			return render_template('customer.html', customer_email=username, flights=flights,
+			return render_template('customer.html', customer_email=customer_email, flights=flights,
 								message="You already purchased a ticket for this flight.")
 
 
@@ -496,7 +492,6 @@ def confirmPurchase():
 	name_on_card = request.form['name_on_card']
 	card_exp_date = request.form['card_exp_date']
 	card_exp_date = card_exp_date + "-01" 
-	customer_email = username
 
 	ins="""
 		insert into Ticket ( 
@@ -540,12 +535,17 @@ def purchaseSuccess():
 @protected_route
 def searchFlightsCustomer():
 	cursor = conn.cursor()
+	trip_type = request.args.get('trip_type', 'oneway')
+	dept_airport = request.args.get('dept_airport')
+	arr_airport = request.args.get('arr_airport')
+	depart_date = request.args.get('depart_date')
+	return_date = request.args.get('return_date')
 
-	dept_airport = request.form['departure_airport']
-	arr_airport = request.form['arrival_airport']
-	departure_date = request.form['departure_date']
-
-	query1 = """
+	outbound_flights = []
+	return_flights = []
+	if dept_airport and arr_airport and depart_date:
+		cursor = conn.cursor(pymysql.cursors.DictCursor)
+		outbound_query = """
 			SELECT 
 				f.airline_name,
 				f.flight_num,
@@ -576,14 +576,47 @@ def searchFlightsCustomer():
 				a.num_of_seats
 			HAVING tickets_sold < a.num_of_seats;
 			"""
-
-	cursor.execute(query1, (dept_airport, arr_airport, departure_date))
-	flights = cursor.fetchall()
-
-
-	cursor.close()
-
-	return render_template('searchFlightsCustomer.html', flights=flights)
+		cursor.execute(outbound_query, (dept_airport, arr_airport, depart_date))
+		outbound_flights = cursor.fetchall()
+	if trip_type == 'roundtrip' and return_date:
+		cursor = conn.cursor(pymysql.cursors.DictCursor)
+		return_query = """
+			SELECT 
+				f.airline_name,
+				f.flight_num,
+				f.departure_date_time,
+				f.arrival_date_time,
+				f.dept_airport,
+				f.arr_airport,
+				f.flight_price,
+				f.flight_status,
+				a.num_of_seats,
+				COUNT(t.ticket_id) AS tickets_sold
+			FROM Flight AS f
+			JOIN Airplane AS a 
+				ON f.airplane_id = a.airplane_id 
+				AND f.airline_name = a.airline_name
+			LEFT JOIN Ticket AS t 
+				ON t.airline_name = f.airline_name
+			AND t.flight_num = f.flight_num
+			AND DATE(t.departure_date_time) = DATE(f.departure_date_time)
+			WHERE f.dept_airport = %s
+			AND f.arr_airport = %s
+			AND DATE(f.departure_date_time) = %s
+			AND f.departure_date_time > NOW()
+			GROUP BY 
+				f.airline_name,
+				f.flight_num,
+				f.departure_date_time,
+				a.num_of_seats
+			HAVING tickets_sold < a.num_of_seats;
+			"""
+		
+		cursor.execute(return_query, (arr_airport, dept_airport, return_date))
+		return_flights = cursor.fetchall()
+		cursor.close()
+	return render_template('searchFlightsCustomer.html', outbound_flights=outbound_flights, return_flights=return_flights,
+    trip_type=trip_type)
 
 @app.route('/logout')
 def logout():
