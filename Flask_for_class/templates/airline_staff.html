@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Page</title>
+</head>
+
+<body>
+    <h1>Welcome, {{ session['username'] }}</h1>
+    <h2>View Flights</h2>
+    <h3>Search For Flight:</h3>
+    <form action="/searchFlights" method="POST">
+        <label for="start_date">start date</label>
+        <input type="datetime-local" name="start_date" placeholder="start date"> <br>
+        <label for="end_date">end date</label>
+        <input type="datetime-local" name="end_date" placeholder="end date"> <br>
+        <input type="text" name="dept_code" placeholder="departure airport code"> <br>
+        <input type="text" name="arr_code" placeholder="arrival airport code"> <br>
+        <input type="submit" value="Search Flights">
+    </form>
+    {% if error %}
+    <p> {{ error }}</p>
+    {% endif %}
+
+    <table border="1">
+        <!-- Airline name isn't necessary; only shows flights in the current airline -->
+        <th>flight number</th>
+        <th>departure date time</th>
+        <th>arrival date time</th>
+        <th>price</th>
+        <th>status</th>
+        <th>airplane id</th>
+        <th>departure airport</th>
+        <th>arrival airport</th>
+        <th>change status</th>
+        <th>view reviews</th>
+
+        {% for flight in flights %}
+        <tr>
+            <!-- flight number -->
+            <td>{{ flight['flight_num'] }}</td>
+            <!-- dept date time -->
+            <td>{{ flight['departure_date_time'] }}</td>
+            <!-- arr date time -->
+            <td>{{ flight['arrival_date_time'] }}</td>
+            <!-- price -->
+            <td>{{ flight['flight_price'] }}</td>
+            <!-- status -->
+            <td>{{ flight['flight_status'] }}</td>
+            <!-- airplane id -->
+            <td>{{ flight['airplane_id'] }}</td>
+            <!-- dept airport -->
+            <td>{{ flight['dept_airport'] }}</td>
+            <!-- arr airport -->
+            <td>{{ flight['arr_airport'] }}</td>
+            <!-- change status for flight -->
+            <td>
+                <form action="/toggle_status" method="POST">
+                    <input type="hidden" name="flight_num" value="{{ flight['flight_num'] }}">
+                    <input type="hidden" name="departure_date_time" value=" {{ flight['departure_date_time'] }}">
+                    <button type="submit">toggle</button>
+                </form>
+            </td>
+            <!-- check the ratings for the given flight -->
+            <td>
+                <form action="/view_ratings" method="POST">
+                    <input type="hidden" name="flight_num" value="{{ flight['flight_num'] }}">
+                    <input type="hidden" name="departure_date_time" value=" {{ flight['departure_date_time'] }}">
+                    <button type="submit">view</button>
+                </form>
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+    <br>
+    {% if reviews %}
+    <h2>Ratings and Reviews for Flight</h2>
+    <p>Average Rating: {{ average_rating }}</p>
+    <h3>Ratings</h3>
+    <table border="1">
+        <th>ratings</th>
+        <th>comments</th>
+        {% for review in reviews %}
+        <tr>
+            <td>{{ review['rate'] }}</td>
+            <td>{{ review['comment'] }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+    {% endif %}
+    <br>
+    <h2>Create New Flight</h2>
+    <form action="/createFlight" method="POST">
+        <!-- dropdown which shows all the airplanes owned by the airline which airline staff is part of -->
+        <label for="airplane_name">airplane name</label>
+        <select name="airplane_name" id="airplane_name">
+            {% for airplane in airplanes %}
+            <option value="{{ airplane['airplane_id'] }}"> {{ airplane['airplane_id'] }}</option>
+            {% endfor %}
+        </select> <br>
+
+        <label for="departure_date_time">departure date time</label>
+        <input type="datetime-local" name="departure_date_time" required> <br>
+        <label for="arrival_date_time">arrival date time</label>
+        <input type="datetime-local" name="arrival_date_time" required> <br>
+        <input type="text" name="dept_airport" placeholder="departure airport" required> <br>
+        <input type="text" name="arr_airport" placeholder="arrival airport" required> <br>
+        <!-- this line is necessary to take decimal input that resembles currency -->
+        <input type="number" name="flight_price" placeholder="flight price" min="0.01" step="0.01" placeholder="0.00"
+            required> <br>
+        <input type="submit" value="Create Flight">
+    </form>
+    {% if error2 %}
+    <p>{{ error2 }}</p>
+    {% endif %}
+    <br>
+    <br>
+
+    <h2>Add Airplane</h2>
+    <form action="/addAirplane" method="POST">
+        <input type="number" name="num_of_seats" placeholder="number of seats" required> <br>
+        <input type="text" name="manufacture_comp" placeholder="manufacture company" required> <br>
+        <input type="number" name="age" placeholder="age" required> <br>
+        <input type="text" name="airplane_id" placeholder="airplane id" required> <br>
+        <input type="submit" value="Add Airplane">
+    </form>
+    <table border="1">
+        <th>number of seats</th>
+        <th>manufacture company</th>
+        <th>age</th>
+        <th>airplane id</th>
+        {% for airplane in airplanes %}
+        <tr>
+            <td>{{ airplane['num_of_seats'] }}</td>
+            <td>{{ airplane['manufacture_comp'] }}</td>
+            <td>{{ airplane['age'] }}</td>
+            <td>{{ airplane['airplane_id'] }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+
+    {% if error3 %}
+    <p>{{ error3 }}</p>
+    {% endif %}
+
+    <a href="{{ url_for('logout_admin') }}">Logout</a> <br>
+</body>
+
+</html>
