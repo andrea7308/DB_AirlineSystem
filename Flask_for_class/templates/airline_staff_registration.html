@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Airline Staff Registration Page</title>
+</head>
+
+<body>
+    <form action="/airlineRegAuth" method="POST">
+        <input type="text" name="username" placeholder="username" required />
+        <!-- Line breaks will be for stylistic purposes... -->
+        </br>
+        <input type="password" name="password" placeholder="password" required />
+        </br>
+        <input type="text" name="first_name" placeholder="first name" required />
+        </br>
+        <input type="text" name="last_name" placeholder="last name" required />
+        </br>
+        <input type="date" name="dob" placeholder="password" required />
+        </br>
+        <input type="text" name="airlinestaff_email" placeholder="email" required />
+        </br>
+        <input type="text" name="airline_name" placeholder="airline name" required />
+        </br>
+
+        <!-- TODO: Build the phone number entry functionality which allows the staff to add one, or many phone numbers -->
+        <!-- submit the form -->
+        <input type="submit" value=Register />
+        <!-- Error message to registration -->
+        {% if error %}
+        <p class="error"><strong>Error:</strong> {{error}}</p>
+        {% endif %}
+    </form>
+</body>
+
+</html>

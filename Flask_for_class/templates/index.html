@@ -2,18 +2,19 @@
 <html>
 
 <head>
-
+	<title>index.html</title>
 </head>
 
 <body>
-{% if not message %}
+	{% if not message %}
 	<a href="/login">Login</a>
 	<a href="/register">Register</a>
 	<a href="/search_flights">Search Flights</a>
+	<a href="/airline_staff_registration">Airline Staff Register</a>
+	<a href="/airline_staff_login">Airline Staff Login</a>
+	{% endif %}
 
-{% endif %}
-
-{% if message %}
+	{% if message %}
 	<a href="/logout">Logout</a>
 	<a href="/remove_account">Remove Account</a>
 	<p class="message">You are logged in {{message}}. You have {{num}} follower(s)</p> </br>
@@ -23,11 +24,11 @@
 	<a href="/view_followed">View people you have followed</a> </br>
 	</br>
 
-        <h4>15 most recent tweets from you and your followers </h4> </br>
+	<h4>15 most recent tweets from you and your followers </h4> </br>
 
 	{% for line in tweets%}
-	        <p>{{line}}</p>
-	        <hr>
+	<p>{{line}}</p>
+	<hr>
 	{% endfor %}
 	{% endif %}
 </body>

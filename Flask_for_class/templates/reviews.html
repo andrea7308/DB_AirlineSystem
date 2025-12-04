@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Reviews</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; }
+        .container { max-width: 700px; margin: auto; }
+        h1 { margin-bottom: 20px; }
+        .review-box { border: 1px solid #ccc; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
+        .review-form { margin-top: 30px; padding: 20px; border: 1px solid #0077cc; border-radius: 8px; }
+        select, textarea, input[type=number] {
+            width: 100%; padding: 10px; margin: 8px 0; border-radius: 5px; border: 1px solid #888;
+        }
+        button {
+            padding: 10px 20px; background: #0077cc; color: #fff; border: none; border-radius: 5px; cursor: pointer;
+        }
+        button:hover { background: #005fa3; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Your Reviews</h1>
+
+        <!-- Existing reviews section -->
+        {% if reviews %}
+            {% for r in reviews %}
+            <div class="review-box">
+                <strong>Flight:</strong> {{ r.airline_name }} {{ r.flight_num }}<br>
+                <strong>Departure:</strong> {{ r.departure_date_time }} <br>
+                <strong>Rating:</strong> {{ r.rate }} / 5 <br>
+                <strong>Comment:</strong> {{ r.comment }}
+            </div>
+            {% endfor %}
+        {% else %}
+            <p>You haven't written any reviews yet.</p>
+        {% endif %}
+
+        <h2>Leave a New Review</h2>
+        <form class="review-form" action="/review" method="POST">
+            <label for="flight">Choose a past flight:</label>
+            <select name="flight" required>
+                {% for f in flights %}
+                    <option value='{"airline_name":"{{ f.airline_name }}","flight_num":"{{ f.flight_num }}","departure_date_time":"{{ f.departure_date_time }}"}'>
+                        {{ f.airline_name }} {{ f.flight_num }} | {{ f.departure_date_time }}
+                    </option>
+                {% endfor %}
+            </select>
+
+            <label for="rating">Rating (1-5):</label>
+            <input type="number" name="rating" min="1" max="5" required />
+
+            <label for="comment">Comment:</label>
+            <textarea name="comment" rows="4" required></textarea>
+
+            <button type="submit">Submit Review</button>
+        </form>
+    </div>
+
+    <div>
+        <form action="{{ url_for('customerPage') }}" method="GET" style="margin-bottom: 20px;">
+            <button style="
+                padding: 10px 18px;
+                background-color: #0077cc;
+                color: white;
+                border: none;
+                border-radius: 6px;
+                cursor: pointer;
+                font-size: 15px;
+            ">
+                ← Back to My Page
+            </button>
+        </form>
+    </div>
+    
+</body>
+</html>

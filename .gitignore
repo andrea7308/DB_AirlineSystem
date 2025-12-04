@@ -3,3 +3,5 @@
 
 # Ignore SSL certificates
 certs/ca.pem
+./venv/
+./Flask_for_class/simple.sql

@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Airline Staff Login</title>
+</head>
+
+<body>
+    <form action="/airlineLogAuth" method="POST">
+        <input type="text" name="username" placeholder="username" required /> </br>
+        <input type="password" name="password" placeholder="password" required /></br>
+        <input type="submit" value=Login />
+        {% if error %}
+        <p class="error"><strong>Error:</strong> {{error}}</p>
+        {% endif %}
+    </form>
+</body>
+
+</html>
