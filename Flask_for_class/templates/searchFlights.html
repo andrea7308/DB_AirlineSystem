@@ -1,0 +1,59 @@
+<h2>Available Flights</h2>
+<style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 40px;
+            background-color: #fafafa;
+        }
+
+        h1, h2 {
+            color: #333;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+            margin-bottom: 30px;
+            background: white;
+        }
+
+        th, td {
+            border: 1px solid #ccc;
+            padding: 10px 12px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #e6eef5;
+        }
+
+</style>
+    {% if flights %}
+    <table>
+            <tr>
+                <th>Airline</th>
+                <th>Flight Number</th>
+                <th>Departure</th>
+                <th>Arrival</th>
+                <th>Price</th>
+                <th>Status</th>
+                <th></th>
+            </tr>
+        {% for flight in flights %}
+        <tr>
+            <td>{{ flight.airline_name }}</td>
+            <td>{{ flight.flight_num }}</td>
+            <td>{{ flight.departure_date_time }}</td>
+            <td>{{ flight.arrival_date_time }}</td>
+            <td>{{ flight.flight_price }}</td>
+            <td>{{ flight.flight_status }}</td>
+            <td>
+                <a href="{{ url_for('purchaseFlight', flight_num=flight.flight_num) }}"
+                class="action-button">Purchase</a>
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+    {% else %}
+        <p>No upcoming flights found.</p>
+    {% endif %}
