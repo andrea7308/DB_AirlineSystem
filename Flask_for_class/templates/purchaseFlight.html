@@ -1,33 +1,102 @@
-<h1>Purchase Flight</h1>
-
-<h3>Flight Details</h3>
-<p><strong>Airline:</strong> {{ flight.airline_name }}</p>
-<p><strong>Flight Number:</strong> {{ flight.flight_num }}</p>
-<p><strong>Departure:</strong> {{ flight.departure_date_time }}</p>
-<p><strong>Arrival:</strong> {{ flight.arrival_date_time }}</p>
-
-<h3>Payment Information</h3>
-
-<form action="{{ url_for('confirmPurchase') }}" method="POST">
-
-    <input type="hidden" name="airline_name" value="{{ flight.airline_name }}">
-    <input type="hidden" name="flight_num" value="{{ flight.flight_num }}">
-    <input type="hidden" name="departure_date_time" value="{{ flight.departure_date_time }}">
-
-    <label>Card Type</label>
-    <select name="card_type" required>
-        <option value="debit">Debit</option>
-        <option value="credit">Credit</option>
-    </select>
-
-    <label>Card Number</label>
-    <input type="text" name="card_number" required>
-
-    <label>Name on Card</label>
-    <input type="text" name="name_on_card" required>
-
-    <label>Expiration Date</label>
-    <input type="month" name="card_exp_date" required>
-
-    <button type="submit">Confirm Purchase</button>
-</form>
+<html>
+<head>
+    <title>Purchase Flight</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', 'Helvetica Neue', Arial, 'Liberation Sans', sans-serif;
+            background: linear-gradient(120deg, #e1f1fc 35%, #b6d1f1 100%);
+            min-height: 100vh;
+            margin: 0;
+            color: #143359; /* dark navy */
+        }
+        .container {
+            background: #f4f8fc;
+            max-width: 400px;
+            margin: 40px auto;
+            box-shadow: 0 6px 32px rgba(20, 51, 89, .065);
+            border-radius: 18px;
+            padding: 32px 30px 24px;
+            border-top: 7px solid #143359;
+            border-bottom: 2px solid #4db8ff;
+        }
+        h1, h3 {
+            text-align: center;
+            color: #143359;
+            margin-top: 0;
+            letter-spacing: 1px;
+        }
+        form {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        label {
+            color: #174472;
+            margin-bottom: 3px;
+            font-weight: 500;
+        }
+        input[type="text"], input[type="month"], select {
+            padding: 8px 10px;
+            border: 1px solid #b6d1f1;
+            border-radius: 6px;
+            outline: none;
+            background: #e6f0fa;
+            color: #143359;
+            margin-bottom: 7px;
+            transition: border .2s;
+        }
+        input:focus, select:focus {
+            border: 1.2px solid #143359;
+            background: #daf0ff;
+        }
+        button[type="submit"] {
+            background: linear-gradient(90deg, #143359, #4590cb);
+            color: #fff;
+            font-weight: bold;
+            border: none;
+            padding: 11px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background .25s;
+            margin-top: 8px;
+        }
+        button[type="submit"]:hover {
+            background: linear-gradient(90deg, #102b4a, #23547a);
+        }
+        .details p {
+            margin: 6px 0 0 0;
+            color: #1c365c;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>Purchase Flight</h1>
+    <h3>Flight Details</h3>
+    <div class="details">
+        <p><strong>Airline:</strong> {{ flight.airline_name }}</p>
+        <p><strong>Flight Number:</strong> {{ flight.flight_num }}</p>
+        <p><strong>Departure:</strong> {{ flight.departure_date_time }}</p>
+        <p><strong>Arrival:</strong> {{ flight.arrival_date_time }}</p>
+    </div>
+    <h3>Payment Information</h3>
+    <form action="{{ url_for('confirmPurchase') }}" method="POST">
+        <input type="hidden" name="airline_name" value="{{ flight.airline_name }}">
+        <input type="hidden" name="flight_num" value="{{ flight.flight_num }}">
+        <input type="hidden" name="departure_date_time" value="{{ flight.departure_date_time }}">
+        <label>Card Type</label>
+        <select name="card_type" required>
+            <option value="debit">Debit</option>
+            <option value="credit">Credit</option>
+        </select>
+        <label>Card Number</label>
+        <input type="text" name="card_number" required>
+        <label>Name on Card</label>
+        <input type="text" name="name_on_card" required>
+        <label>Expiration Date</label>
+        <input type="month" name="card_exp_date" required>
+        <button type="submit">Confirm Purchase</button>
+    </form>
+</div>
+</body>
+</html>

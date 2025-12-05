@@ -1,36 +1,72 @@
-<html>
-
+<html lang="en">
 <head>
+    <title>Customer Registration</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(120deg,#e1f1fc 30%,#b6d1f1 100%);
+            min-height:100vh; margin:0; color:#143359;
+        }
+        .container {
+            background: #f4f8fc; max-width:440px; margin:40px auto; box-shadow:0 6px 32px rgba(20,51,89,0.10);
+            border-radius:18px; padding:36px 28px 28px;
+            border-top:7px solid #143359; border-bottom:2px solid #4db8ff;
+        }
+        h1 { text-align:center; color:#143359; }
+        form { display:flex; flex-direction:column; gap:12px; }
+        label { color:#174472; font-weight:500; margin-bottom:3px; }
+        input[type="text"], input[type="password"], input[type="date"], input[type="number"] {
+            padding:8px 10px; border:1px solid #b6d1f1; border-radius:6px;
+            background:#e6f0fa; color:#143359; transition: border .2s; margin-bottom:7px;
+        }
+        input:focus { border:1.2px solid #143359; background:#daf0ff; }
+        input[type="submit"] {
+            background:linear-gradient(90deg,#143359,#4590cb);
+            color:#fff;font-weight:bold;border:none;padding:11px;border-radius:6px;
+            transition: background .25s; margin-top:8px;
+        }
+        input[type="submit"]:hover{ background:linear-gradient(90deg,#102b4a,#23547a); }
+        .error { color:#c0392b;text-align:center;margin-top:10px; }
+        a{color:#143359; text-align:center; display:block; margin-top:14px; text-decoration:none; font-weight:500;}
+        a:hover{text-decoration:underline;}
+    </style>
 </head>
-
 <body>
-	<form action="/registerAuthCustomer" method="POST">
-		<!-- <input type="text" name = "username" placeholder="username" required/> </br>
-	<input type="password" name = "password" placeholder="password" required/></br> -->
-
-		<!-- New Input Fields -->
-		<input type="text" name="customer_email" placeholder="customer email" required /></br>
-		<input type="text" name="first_name" placeholder="first name" required /></br>
-		<input type="text" name="last_name" placeholder="last name" required /></br>
-		<input type="number" name="building_num" placeholder="building number" required /></br>
-		<input type="text" name="street" placeholder="street" required /></br>
-		<input type="text" name="city" placeholder="city" required /></br>
-		<input type="text" name="state" placeholder="state" required /></br>
-		<input type="text" name="phone_number" placeholder="phone number" required /></br>
-		<!-- Must be unique -->
-		<input type="text" name="passport_num" placeholder="passport number" required /></br>
-		<input type="date" name="passport_expiration" placeholder="passport expiration" required /></br>
-		<input type="text" name="passport_country" placeholder="passport country" required /></br>
-		<input type="date" name="dob" placeholder="date of birth" required /></br>
-		<input type="password" name="password" placeholder="password" required /></br>
-
-		<!-- ......... -->
-		<input type="submit" value=Register />
-		{% if error %}
-		<p class="error"><strong>Error:</strong> {{error}}</p>
-		{% endif %}
-	</form>
-	<a href="/">Go back</a>
+<div class="container">
+    <h1>Customer Registration</h1>
+    <form action="/registerAuthCustomer" method="POST">
+        <label for="customer_email">Customer Email</label>
+        <input type="text" id="customer_email" name="customer_email" placeholder="customer email" required />
+        <label for="first_name">First Name</label>
+        <input type="text" id="first_name" name="first_name" placeholder="first name" required />
+        <label for="last_name">Last Name</label>
+        <input type="text" id="last_name" name="last_name" placeholder="last name" required />
+        <label for="building_num">Building Number</label>
+        <input type="number" id="building_num" name="building_num" placeholder="building number" required />
+        <label for="street">Street</label>
+        <input type="text" id="street" name="street" placeholder="street" required />
+        <label for="city">City</label>
+        <input type="text" id="city" name="city" placeholder="city" required />
+        <label for="state">State</label>
+        <input type="text" id="state" name="state" placeholder="state" required />
+        <label for="phone_number">Phone Number</label>
+        <input type="text" id="phone_number" name="phone_number" placeholder="phone number" required />
+        <label for="passport_num">Passport Number (Must be unique)</label>
+        <input type="text" id="passport_num" name="passport_num" placeholder="passport number" required />
+        <label for="passport_expiration">Passport Expiration</label>
+        <input type="date" id="passport_expiration" name="passport_expiration" required>
+        <label for="passport_country">Passport Country</label>
+        <input type="text" id="passport_country" name="passport_country" placeholder="passport country" required />
+        <label for="dob">Date of Birth</label>
+        <input type="date" id="dob" name="dob" required />
+        <label for="password">Password</label>
+        <input type="password" id="password" name="password" placeholder="password" required />
+        <input type="submit" value="Register" />
+        {% if error %}
+        <p class="error"><strong>Error:</strong> {{error}}</p>
+        {% endif %}
+    </form>
+    <a href="/">Go back</a>
+</div>
 </body>
-
 </html>

@@ -4,65 +4,86 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Airline Staff Registration Page</title>
+    <title>Airline Staff Registration</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(120deg,#e1f1fc 30%,#b6d1f1 100%);
+            min-height:100vh; margin:0; color:#143359;
+        }
+        .container {
+            background:#f4f8fc; max-width:430px; margin:40px auto; box-shadow:0 6px 32px rgba(20,51,89,0.10);
+            border-radius:18px; padding:36px 28px 28px;
+            border-top:7px solid #143359; border-bottom:2px solid #4db8ff;
+        }
+        h1{
+            text-align:center; color:#143359;
+        }
+        form{ display:flex; flex-direction:column; gap:12px; }
+        label {
+            color:#174472; font-weight:500; margin-bottom:3px;
+        }
+        input[type="text"], input[type="password"], input[type="date"], input[type="number"] {
+            padding:8px 10px; border:1px solid #b6d1f1; border-radius:6px;
+            background:#e6f0fa; color:#143359; transition: border .2s; margin-bottom:7px;
+        }
+        input:focus { border:1.2px solid #143359; background:#daf0ff;}
+        button[type="button"] {
+            background: linear-gradient(90deg, #4db8ff 40%, #daf0ff 100%);
+            color:#143359; border:none; border-radius:6px; padding:10px; cursor:pointer;
+            margin-bottom:8px; font-weight:500;
+        }
+        button[type="button"]:hover { background: #b6d1f1; }
+        input[type="submit"] {
+            background:linear-gradient(90deg,#143359,#4590cb);
+            color:#fff;font-weight:bold;border:none;padding:11px;border-radius:6px;
+            transition: background .25s; margin-top:8px;
+        }
+        input[type="submit"]:hover{ background:linear-gradient(90deg,#102b4a,#23547a);}
+        .error { color:#c0392b;text-align:center;margin-top:10px; }
+    </style>
 </head>
 
 <body>
+<div class="container">
+    <h1>Staff Registration</h1>
     <form action="/airlineRegAuth" method="POST">
         <input type="text" name="username" placeholder="username" required />
-        <!-- Line breaks will be for stylistic purposes... -->
-        </br>
         <input type="password" name="password" placeholder="password" required />
-        </br>
         <input type="text" name="first_name" placeholder="first name" required />
-        </br>
         <input type="text" name="last_name" placeholder="last name" required />
-        </br>
-        <input type="date" name="dob" placeholder="password" required />
-        </br>
+        <input type="date" name="dob" required />
         <input type="text" name="airlinestaff_email" placeholder="email" required />
-        </br>
         <input type="text" name="airline_name" placeholder="airline name" required />
-        </br>
-
-        <!-- TODO: Build the phone number entry functionality which allows the staff to add one, or many phone numbers -->
         <div id="phone-fields-container">
             <div class="phone-field-wrapper">
                 <label for="phone_number_1">Phone Number:</label>
                 <input type="text" name="phone_number" id="phone_number_1">
-                <!-- Name attribute is the same for all inputs to send as a list to python backend -->
             </div>
         </div>
         <button type="button" id="add-phone-field">add another phone number</button>
-
-        <!-- submit the form -->
-        <input type="submit" value=Register />
-        <!-- Error message to registration -->
+        <input type="submit" value="Register" />
         {% if error %}
         <p class="error"><strong>Error:</strong> {{error}}</p>
         {% endif %}
     </form>
-
-    <script>
-        document.addEventListener('DOMContentLoaded', (event) => {
-            const addButton = document.getElementById('add-phone-field');
-            const container = document.getElementById('phone-fields-container');
-            let fieldCount = 1;
-
-            addButton.addEventListener('click', () => {
-                fieldCount++;
-                const newFieldWrapper = document.createElement('div');
-                newFieldWrapper.classList.add('phone-field-wrapper');
-                // Use template literals for cleaner HTML generation
-
-                newFieldWrapper.innerHTML = `
-                    <label for="phone_number_${fieldCount}">Phone Number:</label>
-                    <input type="text" name="phone_number" id="phone_number_${fieldCount}">
-                `;
-                container.appendChild(newFieldWrapper);
-            });
-        });
-    </script>
+</div>
+<script>
+document.addEventListener('DOMContentLoaded', (event) => {
+    const addButton = document.getElementById('add-phone-field');
+    const container = document.getElementById('phone-fields-container');
+    let fieldCount = 1;
+    addButton.addEventListener('click', () => {
+        fieldCount++;
+        const newFieldWrapper = document.createElement('div');
+        newFieldWrapper.classList.add('phone-field-wrapper');
+        newFieldWrapper.innerHTML = `
+            <label for="phone_number_${fieldCount}">Phone Number:</label>
+            <input type="text" name="phone_number" id="phone_number_${fieldCount}">
+        `;
+        container.appendChild(newFieldWrapper);
+    });
+});
+</script>
 </body>
-
 </html>
