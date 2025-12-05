@@ -5,24 +5,25 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Reviews</title>
     <style>
-        body { font-family: Arial, sans-serif; margin: 40px; }
-        .container { max-width: 700px; margin: auto; }
-        h1 { margin-bottom: 20px; }
-        .review-box { border: 1px solid #ccc; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
-        .review-form { margin-top: 30px; padding: 20px; border: 1px solid #0077cc; border-radius: 8px; }
+        body { font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif; margin: 0; background: linear-gradient(120deg,#e1f1fc 30%,#b6d1f1 100%); min-height:100vh; color:#143359; }
+        .container { max-width: 700px; margin:32px auto; background: #f4f8fc; border-radius: 18px; box-shadow:0 6px 32px rgba(20,51,89,0.11); padding:34px 38px 17px; border-top:7px solid #143359; border-bottom:2px solid #4db8ff; }
+        h1 { margin-bottom: 24px; color:#143359; }
+        .review-box { border: 1.3px solid #b6d1f1; background:#e6f0fa; color:#143359; padding: 15px; border-radius: 10px; margin-bottom: 20px; }
+        .review-form { margin-top: 30px; padding: 21px 21px 18px; border: 1.5px solid #4db8ff; background:#f4f8fc; border-radius: 11px; }
         select, textarea, input[type=number] {
-            width: 100%; padding: 10px; margin: 8px 0; border-radius: 5px; border: 1px solid #888;
+            width: 100%; padding: 10px; margin: 8px 0; border-radius: 6px; border: 1px solid #b6d1f1;
+            background: #e6f0fa; color: #143359;
         }
+        select:focus, textarea:focus, input[type=number]:focus { border:1.2px solid #143359; background:#daf0ff; }
         button {
-            padding: 10px 20px; background: #0077cc; color: #fff; border: none; border-radius: 5px; cursor: pointer;
+            padding: 10px 20px; background: linear-gradient(90deg,#143359,#4590cb); color: #fff; border: none; border-radius: 6px; cursor: pointer; font-weight:600; font-size:16px; margin-top:10px;
         }
-        button:hover { background: #005fa3; }
+        button:hover { background: linear-gradient(90deg,#102b4a,#23547a); }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>Your Reviews</h1>
-
+<div class="container">
+    <h1>Your Reviews</h1>
         <!-- Existing reviews section -->
         {% if reviews %}
             {% for r in reviews %}
@@ -36,8 +37,24 @@
         {% else %}
             <p>You haven't written any reviews yet.</p>
         {% endif %}
-
         <h2>Leave a New Review</h2>
+        {% if error %}
+            <div style="
+                background-color:#e8f2ff;
+                border:1px solid #a8c9ff;
+                color:#1b4f9c;
+                padding:12px 16px;
+                border-radius:8px;
+                font-size:15px;
+                margin-bottom:15px;
+                display:flex;
+                align-items:center;
+                gap:8px;
+            ">
+                <span style="font-size:18px;">⚠️</span>
+                {{ error }}
+            </div>
+        {% endif %}
         <form class="review-form" action="/review" method="POST">
             <label for="flight">Choose a past flight:</label>
             <select name="flight" required>
@@ -47,32 +64,15 @@
                     </option>
                 {% endfor %}
             </select>
-
             <label for="rating">Rating (1-5):</label>
             <input type="number" name="rating" min="1" max="5" required />
-
             <label for="comment">Comment:</label>
             <textarea name="comment" rows="4" required></textarea>
-
             <button type="submit">Submit Review</button>
         </form>
-    </div>
-
-    <div>
-        <form action="{{ url_for('customerPage') }}" method="GET" style="margin-bottom: 20px;">
-            <button style="
-                padding: 10px 18px;
-                background-color: #0077cc;
-                color: white;
-                border: none;
-                border-radius: 6px;
-                cursor: pointer;
-                font-size: 15px;
-            ">
-                ← Back to My Page
-            </button>
+        <form action="{{ url_for('customerPage') }}" method="GET" style="margin-top:20px;text-align:left;">
+            <button style="padding: 10px 18px; background: linear-gradient(90deg,#143359,#4590cb); color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 15px; font-weight: 600; margin-top:10px;">← Back to My Page</button>
         </form>
-    </div>
-    
+</div>
 </body>
 </html>

@@ -562,6 +562,8 @@ def reviewPage():
 	customer_email = session.get('username')
 	cursor = conn.cursor()
 
+	error = request.args.get('error')
+
 	# all the reviews made by customer
 	query1 ="""
 			select rate, comment, airline_name, departure_date_time, flight_num
@@ -589,7 +591,7 @@ def reviewPage():
 
 	cursor.close()
 
-	return render_template('reviews.html', reviews=reviews, flights=flights )
+	return render_template('reviews.html', reviews=reviews, flights=flights, error=error )
 
 @app.route('/review', methods=['POST'])
 def review():
@@ -604,6 +606,19 @@ def review():
 	rating = request.form['rating']
 	comment = request.form['comment']
 
+	query = """
+			select customer_email
+			from Review
+			where customer_email = %s
+			and flight_num = %s
+			and departure_date_time = %s
+			and airline_name = %s
+			"""
+	cursor.execute(query, (customer_email, flight_num, departure_date_time, airline_name))
+	
+	if cursor.fetchone():
+		return redirect(url_for('reviewPage', error="You've already left a review for this flight"))
+	
 	ins ="""
 		 insert into Review(customer_email, flight_num, 
 		 	departure_date_time, airline_name, rate, comment) 
@@ -651,10 +666,16 @@ def confirmPurchase():
 	cursor.execute(check, (customer_email, airline_name, flight_num, departure_date_time))
 	if cursor.fetchone():
 			query1 = """
-					SELECT ticket_id, airline_name, flight_num, departure_date_time
-					FROM Ticket
-					WHERE customer_email = %s
-					ORDER BY departure_date_time
+					select t.ticket_id, t.airline_name, t.flight_num, 
+						f.departure_date_time, f.arrival_date_time 
+					from Ticket as t 
+					join Flight as f 
+					on t.airline_name = f.airline_name 
+					and t.flight_num = f.flight_num 
+					and t.departure_date_time = f.departure_date_time 
+					where t.customer_email = %s 
+					and f.departure_date_time >= now()
+							
 					"""
 			cursor.execute(query1, (customer_email,))
 			flights = cursor.fetchall()
@@ -760,7 +781,7 @@ def searchFlightsCustomer():
 				f.flight_num,
 				f.departure_date_time,
 				a.num_of_seats
-			HAVING tickets_sold < a.num_of_seats;
+			HAVING tickets_sold < a.num_of_seats
 			"""
 		cursor.execute(outbound_query, (dept_airport, arr_airport, depart_date))
 		outbound_flights = cursor.fetchall()
@@ -795,7 +816,7 @@ def searchFlightsCustomer():
 				f.flight_num,
 				f.departure_date_time,
 				a.num_of_seats
-			HAVING tickets_sold < a.num_of_seats;
+			HAVING tickets_sold < a.num_of_seats
 			"""
 		
 		cursor.execute(return_query, (arr_airport, dept_airport, return_date))
@@ -828,7 +849,8 @@ def search_flights():
             FROM Flight
             WHERE dept_airport = %s
               AND arr_airport = %s
-              AND DATE(departure_date_time) = %s;
+              AND DATE(departure_date_time) = %s
+			  AND departure_date_time > now();
         """
 		cursor.execute(outbound_query, (dept_airport, arr_airport, depart_date))
 		outbound_flights = cursor.fetchall()
@@ -839,7 +861,8 @@ def search_flights():
                 FROM Flight
                 WHERE dept_airport = %s
                   AND arr_airport = %s
-                  AND DATE(departure_date_time) = %s;
+                  AND DATE(departure_date_time) = %s
+				  AND departure_date_time > now();
             """
 		cursor.execute(return_query, (arr_airport, dept_airport, return_date))
 		return_flights = cursor.fetchall()
