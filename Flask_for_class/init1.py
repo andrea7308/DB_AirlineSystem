@@ -383,6 +383,7 @@ def view_reports():
 
 	if df.empty:
 		error = "No data available for the selected range."
+		cursor.close()
 		return render_template("airline_staff.html", error4=error)
 
 	fig = px.bar(
@@ -394,6 +395,8 @@ def view_reports():
     )
 	graph_html = fig.to_html(full_html=False)
 	
+	cursor.close()
+
 	return render_template(
         "airline_staff.html",
         graph_html=graph_html,
@@ -492,6 +495,7 @@ def registerAuthCustomer():
 	if(data):
 		#If the previous query returns data, then user exists
 		error = "This user already exists"
+		cursor.close()
 		return render_template('customer_register.html', error = error)
 	else:
 		ins = 'INSERT INTO Customer VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)'
@@ -526,10 +530,12 @@ def loginAuth():
 		#creates a session for the the user
 		#session is a built in
 		session['username'] = username
+		cursor.close()
 		return redirect(url_for('customerPage'))
 	else:
 		#returns an error message to the html page
 		error = 'Invalid login or username'
+		cursor.close()
 		return render_template('customer_login.html', error=error)
 	
 # Main Customer page that shows the upcoming flights of customer and buttons for other actions
@@ -617,6 +623,7 @@ def review():
 	cursor.execute(query, (customer_email, flight_num, departure_date_time, airline_name))
 	
 	if cursor.fetchone():
+		cursor.close()
 		return redirect(url_for('reviewPage', error="You've already left a review for this flight"))
 	
 	ins ="""
