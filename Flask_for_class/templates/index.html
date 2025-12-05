@@ -1,18 +1,41 @@
 <!DOCTYPE html>
-<html>
-
+<html lang="en">
 <head>
-	<title>index.html</title>
+    <title>Welcome</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(120deg,#e1f1fc 30%,#b6d1f1 100%);
+            min-height:100vh; margin:0; color:#143359;
+        }
+        .container {
+            background:#f4f8fc; max-width:460px; margin:60px auto; box-shadow:0 6px 32px rgba(20,51,89,0.10);
+            border-radius:18px; padding:36px 34px 28px; display:flex; flex-direction:column; align-items:center;
+            border-top:7px solid #143359; border-bottom:2px solid #4db8ff;
+        }
+        h1{
+            color:#143359; margin-top:0; text-align:center;
+        }
+        .nav-link{
+            display:block;
+            background: linear-gradient(90deg,#143359,#4590cb);
+            color:#fff; font-weight:600; border-radius:6px;
+            padding:14px 0; margin:10px 0; width:100%; text-align:center;
+            text-decoration:none; font-size:18px; transition:background .25s;
+        }
+        .nav-link:hover{ background:linear-gradient(90deg,#102b4a,#23547a);}
+    </style>
 </head>
-
 <body>
-	{% if not message %}
-	<a href="/login">Login</a>
-	<a href="/register">Register</a>
-	<a href="/search_flights">Search Flights</a>
-	<a href="/airline_staff_registration">Airline Staff Register</a>
-	<a href="/airline_staff_login">Airline Staff Login</a>
-	{% endif %}
+<div class="container">
+    <h1>Welcome to the Airline System</h1>
+    {% if not message %}
+	 	<a href="/search_flights" class="nav-link">Search Flights</a>
+        <a href="/login" class="nav-link">Customer Login</a>
+        <a href="/register" class="nav-link">Customer Register</a>
+        <a href="/airline_staff_registration" class="nav-link">Airline Staff Register</a>
+        <a href="/airline_staff_login" class="nav-link">Airline Staff Login</a>
+    {% endif %}
+</div>
 </body>
-
 </html>

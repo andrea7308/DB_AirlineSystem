@@ -5,17 +5,48 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Airline Staff Login</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(120deg,#e1f1fc 30%,#b6d1f1 100%);
+            min-height:100vh; margin:0;color:#143359;
+        }
+        .container {
+            background:#f4f8fc; max-width:340px; margin:50px auto; box-shadow:0 6px 32px rgba(20,51,89,0.08);
+            border-radius:18px; padding:30px 28px 24px;
+            border-top:7px solid #143359; border-bottom:2px solid #4db8ff;
+        }
+        h1{
+            text-align:center; color:#143359;
+        }
+        form{ display:flex; flex-direction:column; gap:15px; }
+        input[type="text"],input[type="password"]{
+            padding:8px 10px; border:1px solid #b6d1f1; border-radius:6px;
+            background:#e6f0fa; color:#143359; transition: border .2s;
+        }
+        input:focus{ border:1.2px solid #143359; background:#daf0ff;}
+        input[type="submit"]{
+            background:linear-gradient(90deg,#143359,#4590cb);
+            color:#fff; font-weight:bold; border:none; padding:11px; border-radius:6px;
+            margin-top:8px; cursor:pointer; transition:background .25s;
+        }
+        input[type="submit"]:hover{ background: linear-gradient(90deg,#102b4a,#23547a); }
+        .error{ color:#c0392b; text-align:center; margin-top:10px; }
+    </style>
 </head>
 
 <body>
+<div class="container">
+    <h1>Airline Staff Login</h1>
     <form action="/airlineLogAuth" method="POST">
-        <input type="text" name="username" placeholder="username" required /> </br>
-        <input type="password" name="password" placeholder="password" required /></br>
-        <input type="submit" value=Login />
+        <input type="text" name="username" placeholder="username" required />
+        <input type="password" name="password" placeholder="password" required />
+        <input type="submit" value="Login" />
         {% if error %}
         <p class="error"><strong>Error:</strong> {{error}}</p>
         {% endif %}
     </form>
+</div>
 </body>
 
 </html>

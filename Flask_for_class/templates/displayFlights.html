@@ -1,45 +1,117 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Search Flights</title>
+    <title>Available Flights</title>
     <style>
-        body { font-family: Arial, sans-serif; margin: 40px; }
-        form { max-width: 400px; }
-        label { display: block; margin-top: 15px; }
-        input, select {
-            width: 100%;
-            padding: 8px;
-            margin-top: 5px;
+        body {
+            font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(120deg,#e8f6ff 30%,#f8fafb 100%);
+            min-height:100vh; margin:0;
         }
-        button {
-            margin-top: 20px;
-            padding: 10px 18px;
-            background-color: #0077cc;
-            color: white;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
+        .container {
+            background:#fff; max-width:960px; margin:32px auto; box-shadow:0 6px 32px rgba(34,139,230,0.09);
+            border-radius:18px; padding:36px 36px 24px;
+            border-top:7px solid #228be6; border-bottom:2px solid #ffcc00;
         }
+        h1,h2{ color:#196fa0; text-align:center; margin-top:0; }
+        table {
+            width: 100%; border-collapse: collapse; background: white; margin: 25px 0 32px;
+        }
+        th, td {
+            border: 1px solid #cbe9fa; padding: 10px 13px; text-align: left;
+        }
+        th { background-color: #e6eef5; }
+        .action-button {
+            padding: 10px 16px; background: linear-gradient(90deg, #1194e7, #05b7c3); color: white; border-radius: 6px; border: none; font-size: 15px; font-weight:500; cursor: pointer; text-decoration: none;
+        }
+        .action-button:hover { background: #196fa0; }
     </style>
+    <script>
+    function toggleReturnDate() {
+        const roundtrip = document.getElementById("roundtrip").checked;
+        const container = document.getElementById("return-date-container");
+        container.style.display = roundtrip ? "block" : "none";
+    }
+    document.addEventListener("DOMContentLoaded", function() { toggleReturnDate(); });
+    </script>
 </head>
 <body>
-
-<h1>Search for Flights</h1>
-
-<form action="/searchFlightsCustomer" method="POST">
-
-    <label>Departure Airport</label>
-    <input type="text" name="departure_airport" placeholder="e.g. JFK" required>
-
-    <label>Arrival Airport</label>
-    <input type="text" name="arrival_airport" placeholder="e.g. LAX" required>
-
-    <label>Departure Date</label>
-    <input type="date" name="departure_date" required>
-
-    <button type="submit">Search Flights</button>
-</form>
-
+<div class="container">
+    <h2>Available Flights</h2>
+    <form method="GET" action="/searchFlightsCustomer">
+        <p>
+            <strong>Trip Type:</strong><br>
+            <input type="radio" id="oneway" name="trip_type" value="oneway" onchange="toggleReturnDate()" {% if request.args.get('trip_type', 'oneway') == 'oneway' %}checked{% endif %}>
+            <label for="oneway">One-way</label>
+            <input type="radio" id="roundtrip" name="trip_type" value="roundtrip" onchange="toggleReturnDate()" {% if request.args.get('trip_type') == 'roundtrip' %}checked{% endif %}>
+            <label for="roundtrip">Round-trip</label>
+        </p>
+        <label for="dept_airport">Departure Airport Code:</label>
+        <input type="text" name="dept_airport" id="dept_airport" placeholder="e.g. LGA" value="{{ request.args.get('dept_airport', '') }}" required />
+        <label for="arr_airport">Arrival Airport Code:</label>
+        <input type="text" name="arr_airport" id="arr_airport" placeholder="e.g. IAH" value="{{ request.args.get('arr_airport', '') }}" required />
+        <label for="depart_date">Departure Date:</label>
+        <input type="date" name="depart_date" id="depart_date" value="{{ request.args.get('depart_date', '') }}" required />
+        <div id="return-date-container">
+            <label for="return_date">Return Date:</label>
+            <input type="date" name="return_date" id="return_date" value="{{ request.args.get('return_date', '') }}">
+        </div>
+        <button type="submit" class="action-button">Search</button>
+    </form>
+    {% if outbound_flights is defined %}
+        <h2>Outbound Flights</h2>
+        {% if outbound_flights %}
+        <table>
+            <tr>
+                <th>Flight #</th>
+                <th>From</th>
+                <th>To</th>
+                <th>Departure Time</th>
+                <th>Arrival Time</th>
+                <th>Purchase</th>
+            </tr>
+            {% for f in outbound_flights %}
+            <tr>
+                <td>{{ f.flight_num }}</td>
+                <td>{{ f.dept_airport }}</td>
+                <td>{{ f.arr_airport }}</td>
+                <td>{{ f.departure_date_time }}</td>
+                <td>{{ f.arrival_date_time }}</td>
+                <td><a href="{{ url_for('purchaseFlight', flight_num=f.flight_num) }}" class="action-button">Purchase</a></td>
+            </tr>
+            {% endfor %}
+        </table>
+        {% else %}
+        <p>No outbound flights found for that search.</p>
+        {% endif %}
+    {% endif %}
+    {% if trip_type == 'roundtrip' %}
+        <h2>Return Flights</h2>
+        {% if return_flights %}
+        <table>
+            <tr>
+                <th>Flight #</th>
+                <th>From</th>
+                <th>To</th>
+                <th>Departure Time</th>
+                <th>Arrival Time</th>
+                <th>Purchase</th>
+            </tr>
+            {% for f in return_flights %}
+            <tr>
+                <td>{{ f.flight_num }}</td>
+                <td>{{ f.dept_airport }}</td>
+                <td>{{ f.arr_airport }}</td>
+                <td>{{ f.departure_date_time }}</td>
+                <td>{{ f.arrival_date_time }}</td>
+                <td><a href="{{ url_for('purchaseFlight', flight_num=f.flight_num) }}" class="action-button">Purchase</a></td>
+            </tr>
+            {% endfor %}
+        </table>
+        {% else %}
+        <p>No return flights found for that search.</p>
+        {% endif %}
+    {% endif %}
+</div>
 </body>
 </html>

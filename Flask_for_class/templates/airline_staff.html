@@ -5,6 +5,30 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Page</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif; background: linear-gradient(120deg,#e1f1fc 30%,#b6d1f1 100%); color: #143359; min-height:100vh; margin: 0; }
+        .container { background:#f4f8fc; max-width:1100px; margin:30px auto; box-shadow:0 6px 32px rgba(20,51,89,.11); border-radius:18px; padding:32px 28px 22px; border-top:7px solid #143359; border-bottom:2px solid #4db8ff; }
+        h1, h2, h3 { color: #143359; }
+        form { margin: 12px 0 26px 0; }
+        label { color:#174472; font-weight:500; }
+        input, select, button {
+            padding:8px 10px; border:1px solid #b6d1f1; border-radius:6px;
+        }
+        input[type="text"], input[type="number"], input[type="datetime-local"], select {
+            background: #e6f0fa; color: #143359; margin-bottom:8px;
+        }
+        input:focus, select:focus { border:1.2px solid #143359; background:#daf0ff; }
+        input[type="submit"], button { background:linear-gradient(90deg,#143359,#4590cb); color:#fff;font-weight:600;border:none;transition:.25s; }
+        input[type="submit"]:hover, button:hover { background:linear-gradient(90deg,#102b4a,#23547a); }
+        table { width: 100%; border-collapse: collapse; background: #e6f0fa; margin: 14px 0 32px; }
+        th, td { border: 1px solid #b6d1f1; padding: 10px 13px; text-align: left; }
+        th { background-color: #d5e8fc; color: #143359; }
+        .chartbox, #chart, #canvas { background: #e6f0fa; color: #143359; }
+        .error, p.error, .msg-failed { color:#c0392b; }
+        a { color:#174472; text-decoration:none; font-weight:500; }
+        a:hover { text-decoration:underline; }
+    </style>
 </head>
 
 <body>
@@ -144,8 +168,6 @@
     {% if error3 %}
     <p>{{ error3 }}</p>
     {% endif %}
-
-    <h2>Change Status</h2>
 
     <h2>View Reports </h2>
     <form action="/view_reports" method="GET">

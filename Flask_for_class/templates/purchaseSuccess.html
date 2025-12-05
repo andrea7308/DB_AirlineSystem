@@ -1,3 +1,40 @@
-<h1>Purchase Complete</h1>
-<p>Your ticket has been successfully purchased!</p>
-<a href="{{ url_for('customerPage') }}">Return</a>
+<html lang="en">
+<head>
+    <title>Purchase Complete</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(120deg,#e1f1fc 30%,#b6d1f1 100%);
+            min-height:100vh; margin:0; color:#143359;
+        }
+        .container {
+            background:#f4f8fc; max-width:370px; margin:70px auto; box-shadow:0 6px 32px rgba(20,51,89,.13);
+            border-radius:18px; padding:32px 28px 24px;
+            border-top:7px solid #143359; border-bottom:2px solid #4db8ff;
+            text-align:center;
+        }
+        h1{
+            color:#143359; margin-top:0;
+        }
+        .btn-link{
+            display:inline-block;
+            margin-top:18px;
+            padding:11px 18px;
+            background: linear-gradient(90deg,#143359,#4590cb);
+            color:#fff;
+            font-weight:bold;
+            border-radius:6px;
+            text-decoration:none;
+            transition: background .25s;
+        }
+        .btn-link:hover{ background:linear-gradient(90deg,#102b4a,#23547a);}
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>Purchase Complete</h1>
+    <p>Your ticket has been successfully purchased!</p>
+    <a href="{{ url_for('customerPage') }}" class="btn-link">Return</a>
+</div>
+</body>
+</html>
