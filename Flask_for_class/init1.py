@@ -426,6 +426,33 @@ def view_ratings():
 	cursor.close()
 	return render_template('airline_staff.html', reviews = reviews, average_rating = average_rating, airplanes=session['airplanes'])
 
+
+# Write a function that displays all the customers which have purchased a flight. This
+# can be added as another button to the search menu for each flight, which shouldn't be hard.
+# 'View flight ratings' functionality
+@app.route('/view_customers', methods=['GET', 'POST'])
+@protected_route
+def view_customers():
+	airline_name = session['airline_name']
+	flight_num = request.form['flight_num']
+	departure_date_time = request.form['departure_date_time']
+
+	cursor = conn.cursor()
+	# for both, remember to deal with the case that no info is returned
+	# get all the ratings related to the flight
+	query = '''
+	select c.customer_email, c.first_name, c.last_name, c.phone_number, c.passport_num,
+	c.passport_expiration, c.passport_country, c.dob
+	from Customer as c natural join (Flight natural join Ticket)
+	where airline_name = %s and flight_num = %s and departure_date_time = %s;
+	'''
+	cursor.execute(query, (airline_name, flight_num, departure_date_time))
+	customers = cursor.fetchall()
+	
+	cursor.close()
+	return render_template('airline_staff.html', customers=customers, airplanes=session['airplanes'])
+
+
 @app.route('/logout_admin')
 def logout_admin():
 	session.pop('username')

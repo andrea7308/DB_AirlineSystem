@@ -36,6 +36,7 @@
         <th>arrival airport</th>
         <th>change status</th>
         <th>view reviews</th>
+        <th>view customers</th>
 
         {% for flight in flights %}
         <tr>
@@ -71,10 +72,19 @@
                     <button type="submit">view</button>
                 </form>
             </td>
+            <td>
+                <form action="/view_customers" method="POST">
+                    <input type="hidden" name="flight_num" value="{{ flight['flight_num'] }}">
+                    <input type="hidden" name="departure_date_time" value=" {{ flight['departure_date_time'] }}">
+                    <button type="submit">customers</button>
+                </form>
+            </td>
+
         </tr>
         {% endfor %}
     </table>
     <br>
+    <!-- only shows up if view_ratings event is triggered -->
     {% if reviews %}
     <h2>Ratings and Reviews for Flight</h2>
     <p>Average Rating: {{ average_rating }}</p>
@@ -86,6 +96,32 @@
         <tr>
             <td>{{ review['rate'] }}</td>
             <td>{{ review['comment'] }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+    {% endif %}
+    <!-- only shows up if view_customers event is triggered -->
+    {% if customers %}
+    <h2>Customer Information for Flight</h2>
+    <table border="1">
+        <th>email</th>
+        <th>first name</th>
+        <th>last name</th>
+        <th>phone number</th>
+        <th>passport number</th>
+        <th>passport expiration</th>
+        <th>passport country</th>
+        <th>date of birth</th>
+        {% for customer in customers %}
+        <tr>
+            <td>{{ customer['customer_email'] }}</td>
+            <td>{{ customer['first_name'] }}</td>
+            <td>{{ customer['last_name'] }}</td>
+            <td>{{ customer['phone_number'] }}</td>
+            <td>{{ customer['passport_num'] }}</td>
+            <td>{{ customer['passport_expiration'] }}</td>
+            <td>{{ customer['passport_country'] }}</td>
+            <td>{{ customer['dob'] }}</td>
         </tr>
         {% endfor %}
     </table>
@@ -157,7 +193,7 @@
         <button type="submit">View Report</button>
     </form>
     {{ graph_html|safe }}
-        
+
     {% if error4 %}
     <p>{{ error4 }}</p>
     {% endif %}
