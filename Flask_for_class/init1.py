@@ -261,7 +261,8 @@ def searchFlights():
 		cursor.close()
 		return render_template('airline_staff.html', error=error, airplanes=session['airplanes'])
 
-# Search for flights as an airline staff
+
+# Create flights as an airline staff
 @app.route('/createFlight', methods=['GET', 'POST'])
 @protected_route
 def createFlight():
@@ -429,7 +430,7 @@ def view_ratings():
 
 # Write a function that displays all the customers which have purchased a flight. This
 # can be added as another button to the search menu for each flight, which shouldn't be hard.
-# 'View flight ratings' functionality
+# 'View customers' functionality
 @app.route('/view_customers', methods=['GET', 'POST'])
 @protected_route
 def view_customers():
@@ -438,8 +439,6 @@ def view_customers():
 	departure_date_time = request.form['departure_date_time']
 
 	cursor = conn.cursor()
-	# for both, remember to deal with the case that no info is returned
-	# get all the ratings related to the flight
 	query = '''
 	select c.customer_email, c.first_name, c.last_name, c.phone_number, c.passport_num,
 	c.passport_expiration, c.passport_country, c.dob
