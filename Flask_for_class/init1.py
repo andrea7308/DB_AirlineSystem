@@ -680,7 +680,6 @@ def confirmPurchase():
 					and t.flight_num = f.flight_num 
 					and t.departure_date_time = f.departure_date_time 
 					where t.customer_email = %s 
-					and f.departure_date_time >= now()
 							
 					"""
 			cursor.execute(query1, (customer_email,))
@@ -781,7 +780,6 @@ def searchFlightsCustomer():
 			WHERE f.dept_airport = %s
 			AND f.arr_airport = %s
 			AND DATE(f.departure_date_time) = %s
-			AND f.departure_date_time > NOW()
 			GROUP BY 
 				f.airline_name,
 				f.flight_num,
@@ -816,7 +814,6 @@ def searchFlightsCustomer():
 			WHERE f.dept_airport = %s
 			AND f.arr_airport = %s
 			AND DATE(f.departure_date_time) = %s
-			AND f.departure_date_time > NOW()
 			GROUP BY 
 				f.airline_name,
 				f.flight_num,
@@ -856,7 +853,6 @@ def search_flights():
             WHERE dept_airport = %s
               AND arr_airport = %s
               AND DATE(departure_date_time) = %s
-			  AND departure_date_time > now();
         """
 		cursor.execute(outbound_query, (dept_airport, arr_airport, depart_date))
 		outbound_flights = cursor.fetchall()
@@ -868,7 +864,6 @@ def search_flights():
                 WHERE dept_airport = %s
                   AND arr_airport = %s
                   AND DATE(departure_date_time) = %s
-				  AND departure_date_time > now();
             """
 		cursor.execute(return_query, (arr_airport, dept_airport, return_date))
 		return_flights = cursor.fetchall()
